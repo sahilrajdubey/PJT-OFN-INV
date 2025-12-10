@@ -125,9 +125,9 @@ export default function ComputerSubmissionPage() {
                         ← Back to Form Selection
                     </button>
                     <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
-                        Inventory Submission Form
+                            Equipment Submission Form
                     </h1>
-                    <p className="text-white/60">Register new inventory equipment</p>
+                    <p className="text-white/60">Register new equipment into the inventory system</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-8 shadow-2xl">

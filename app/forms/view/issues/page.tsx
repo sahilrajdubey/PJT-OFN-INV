@@ -127,7 +127,7 @@ export default function ViewIssuesPage() {
                             <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
                                 Issue Records Database
                             </h1>
-                            <p className="text-white/60">All computer issue records</p>
+                            <p className="text-white/60">All equipment issue records</p>
                         </div>
                         <button
                             onClick={exportToPDF}

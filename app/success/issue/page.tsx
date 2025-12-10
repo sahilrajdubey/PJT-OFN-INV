@@ -53,7 +53,7 @@ function IssueSuccessContent() {
                         Issued Successfully!
                     </h1>
                     <p className="text-white/80 text-lg mb-8">
-                        Inventory has been successfully issued to the employee
+                        Equipment has been successfully issued to the employee
                     </p>
 
                     {/* Issue Details */}

@@ -173,15 +173,15 @@ export default function ComputerIssuePage() {
                         ← Back to Form Selection
                     </button>
                     <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
-                        Issue Inventory Form
+                        Issue Equipment Form
                     </h1>
-                    <p className="text-white/60">Issue inventory to employee or section</p>
+                    <p className="text-white/60">Issue equipment to employee or section</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-8 shadow-2xl">
                     {/* Select Inventory ID */}
                     <div className="space-y-2 mb-6">
-                        <label className="text-sm font-medium text-white/80 ml-1">Select Inventory *</label>
+                        <label className="text-sm font-medium text-white/80 ml-1">Select Equipment *</label>
                         <button
                             type="button"
                             onClick={() => setShowInventoryDrawer(true)}

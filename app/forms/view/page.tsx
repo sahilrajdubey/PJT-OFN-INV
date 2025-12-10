@@ -45,7 +45,7 @@ export default function ViewDataPage() {
                             </div>
                             <h2 className="text-xl md:text-2xl font-bold text-white">Submitted Computers</h2>
                             <p className="text-white/70 text-xs md:text-sm">
-                                View all registered computer equipment in the inventory
+                                View all registered equipment in the inventory
                             </p>
                         </div>
                     </button>
@@ -63,7 +63,7 @@ export default function ViewDataPage() {
                             </div>
                             <h2 className="text-xl md:text-2xl font-bold text-white">Issue Records</h2>
                             <p className="text-white/70 text-xs md:text-sm">
-                                View all computer issue records
+                                View all equipment issue records
                             </p>
                         </div>
                     </button>
