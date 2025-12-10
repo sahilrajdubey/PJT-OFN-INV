@@ -66,9 +66,18 @@ export default function LoginPage() {
                             WebkitBackdropFilter: 'blur(50px)',
                         }}
                     >
-                        <h1 className="text-3xl font-bold text-white text-center mb-8 tracking-wider">
-                            Admin Login
-                        </h1>
+                        {/* Logo and Title */}
+                        <div className="flex flex-col items-center mb-8">
+                            <img 
+                                src="/favicon.ico" 
+                                alt="OFN Logo" 
+                                className="w-16 h-16 mb-4"
+                            />
+                            <h1 className="text-2xl font-bold text-white text-center tracking-wider">
+                                OFN-INV-MGMT
+                            </h1>
+                            <p className="text-white/60 text-sm mt-2">Admin Portal</p>
+                        </div>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             {/* Error Message */}
