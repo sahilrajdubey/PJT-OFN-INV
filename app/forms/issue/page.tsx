@@ -173,9 +173,9 @@ export default function ComputerIssuePage() {
                         ← Back to Form Selection
                     </button>
                     <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
-                        Issue Computer Form
+                        Issue Inventory Form
                     </h1>
-                    <p className="text-white/60">Issue computer to employee or section</p>
+                    <p className="text-white/60">Issue inventory to employee or section</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-8 shadow-2xl">

@@ -58,9 +58,9 @@ export default function FormSelectionPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
                             </div>
-                            <h2 className="text-2xl font-bold text-white">Issue Computer</h2>
+                            <h2 className="text-2xl font-bold text-white">Issue Inventory</h2>
                             <p className="text-white/70 text-sm">
-                                Issue computer to employee or section
+                                Issue inventory to employee or section
                             </p>
                         </div>
                     </button>
