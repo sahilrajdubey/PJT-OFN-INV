@@ -43,7 +43,7 @@ export default function ViewDataPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                                 </svg>
                             </div>
-                            <h2 className="text-xl md:text-2xl font-bold text-white">Submitted Computers</h2>
+                            <h2 className="text-xl md:text-2xl font-bold text-white">Submitted Equipment</h2>
                             <p className="text-white/70 text-xs md:text-sm">
                                 View all registered equipment in the inventory
                             </p>
