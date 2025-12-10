@@ -11,8 +11,9 @@ export const dynamic = 'force-dynamic';
 export default function ComputerSubmissionPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [showInventoryTypeDrawer, setShowInventoryTypeDrawer] = useState(false);
     const [formData, setFormData] = useState({
-        assetTag: '',
+        inventoryType: '',
         serialNumber: '',
         computerType: 'desktop',
         brand: '',
@@ -21,11 +22,11 @@ export default function ComputerSubmissionPage() {
         ram: '',
         storage: '',
         operatingSystem: '',
-        assignedTo: '',
-        section: '',
         purchaseDate: '',
         remarks: ''
     });
+
+    const inventoryTypes = ['PC', 'CPU', 'Printer', 'UPS'];
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({
@@ -34,26 +35,65 @@ export default function ComputerSubmissionPage() {
         });
     };
 
+    const handleInventoryTypeSelect = (type: string) => {
+        setFormData({ ...formData, inventoryType: type });
+        setShowInventoryTypeDrawer(false);
+    };
+
+    const generateUniqueId = async (inventoryType: string): Promise<string> => {
+        try {
+            // Get the latest entry for this inventory type
+            const { data, error } = await supabase
+                .from('computer_submissions')
+                .select('unique_id')
+                .like('unique_id', `OFN/ITC/INV/${inventoryType}-%`)
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            let nextNumber = 1;
+            if (data && data.length > 0) {
+                // Extract the number from the last unique_id
+                const lastId = data[0].unique_id;
+                const match = lastId.match(/-(\d+)$/);
+                if (match) {
+                    nextNumber = parseInt(match[1]) + 1;
+                }
+            }
+
+            // Format with leading zeros (001, 002, etc.)
+            const formattedNumber = nextNumber.toString().padStart(3, '0');
+            return `OFN/ITC/INV/${inventoryType}-${formattedNumber}`;
+        } catch (error) {
+            console.error('Error generating unique ID:', error);
+            // Fallback to timestamp-based ID
+            return `OFN/ITC/INV/${inventoryType}-${Date.now()}`;
+        }
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         
         try {
+            // Generate unique ID
+            const uniqueId = await generateUniqueId(formData.inventoryType);
+
             const { data, error } = await supabase
                 .from('computer_submissions')
                 .insert([
                     {
-                        asset_tag: formData.assetTag,
+                        unique_id: uniqueId,
+                        inventory_type: formData.inventoryType,
                         serial_number: formData.serialNumber,
-                        computer_type: formData.computerType,
+                        computer_type: formData.inventoryType === 'PC' ? formData.computerType : null,
                         brand: formData.brand,
                         model: formData.model,
                         processor: formData.processor,
                         ram: formData.ram,
                         storage: formData.storage,
                         operating_system: formData.operatingSystem,
-                        assigned_to: formData.assignedTo,
-                        section: formData.section,
                         purchase_date: formData.purchaseDate,
                         remarks: formData.remarks
                     }
@@ -61,8 +101,7 @@ export default function ComputerSubmissionPage() {
 
             if (error) throw error;
 
-            alert('Computer submitted successfully!');
-            router.push('/forms');
+            router.push(`/success/submission?id=${encodeURIComponent(uniqueId)}`);
         } catch (error: any) {
             alert('Error submitting data: ' + error.message);
         } finally {
@@ -86,25 +125,23 @@ export default function ComputerSubmissionPage() {
                         ← Back to Form Selection
                     </button>
                     <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
-                        Computer Submission Form
+                        Inventory Submission Form
                     </h1>
-                    <p className="text-white/60">Register new computer equipment</p>
+                    <p className="text-white/60">Register new inventory equipment</p>
                 </div>
 
                 <form onSubmit={handleSubmit} className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-8 shadow-2xl">
                     <div className="grid md:grid-cols-2 gap-6">
-                        {/* Asset Tag */}
+                        {/* Inventory Type */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80 ml-1">Asset Tag *</label>
-                            <input
-                                type="text"
-                                name="assetTag"
-                                value={formData.assetTag}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
-                                placeholder="e.g., COMP-2024-001"
-                            />
+                            <label className="text-sm font-medium text-white/80 ml-1">Inventory Type *</label>
+                            <button
+                                type="button"
+                                onClick={() => setShowInventoryTypeDrawer(true)}
+                                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white text-left focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all hover:bg-white/15"
+                            >
+                                {formData.inventoryType || <span className="text-white/50">Click to select type</span>}
+                            </button>
                         </div>
 
                         {/* Serial Number */}
@@ -121,22 +158,24 @@ export default function ComputerSubmissionPage() {
                             />
                         </div>
 
-                        {/* Computer Type */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80 ml-1">Computer Type *</label>
-                            <select
-                                name="computerType"
-                                value={formData.computerType}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
-                            >
-                                <option value="desktop">Desktop</option>
-                                <option value="laptop">Laptop</option>
-                                <option value="workstation">Workstation</option>
-                                <option value="server">Server</option>
-                            </select>
-                        </div>
+                        {/* Computer Type - Only for PC */}
+                        {formData.inventoryType === 'PC' && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-white/80 ml-1">Computer Type *</label>
+                                <select
+                                    name="computerType"
+                                    value={formData.computerType}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
+                                >
+                                    <option value="desktop">Desktop</option>
+                                    <option value="laptop">Laptop</option>
+                                    <option value="workstation">Workstation</option>
+                                    <option value="server">Server</option>
+                                </select>
+                            </div>
+                        )}
 
                         {/* Brand */}
                         <div className="space-y-2">
@@ -222,34 +261,6 @@ export default function ComputerSubmissionPage() {
                             />
                         </div>
 
-                        {/* Assigned To */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80 ml-1">Assigned To *</label>
-                            <input
-                                type="text"
-                                name="assignedTo"
-                                value={formData.assignedTo}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
-                                placeholder="Employee name"
-                            />
-                        </div>
-
-                        {/* Section */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80 ml-1">Section *</label>
-                            <input
-                                type="text"
-                                name="section"
-                                value={formData.section}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
-                                placeholder="e.g., IT Department"
-                            />
-                        </div>
-
                         {/* Purchase Date */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-white/80 ml-1">Purchase Date *</label>
@@ -292,6 +303,32 @@ export default function ComputerSubmissionPage() {
                     </button>
                 </form>
             </div>
+
+            {/* Inventory Type Drawer */}
+            {showInventoryTypeDrawer && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowInventoryTypeDrawer(false)}>
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
+                    <div className="relative bg-black/90 backdrop-blur-xl border border-white/40 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                        <div className="p-6 border-b border-white/20">
+                            <h2 className="text-2xl font-bold text-white">Select Inventory Type</h2>
+                            <p className="text-white/60 text-sm mt-1">Choose the type of inventory</p>
+                        </div>
+                        <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-6">
+                            <div className="grid grid-cols-2 gap-3">
+                                {inventoryTypes.map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => handleInventoryTypeSelect(type)}
+                                        className="p-4 bg-white/10 hover:bg-white/20 border border-white/30 rounded-xl text-white font-medium transition-all"
+                                    >
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
         </ProtectedRoute>
     );

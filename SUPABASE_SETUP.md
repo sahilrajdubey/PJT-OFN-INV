@@ -27,22 +27,25 @@ Run this SQL in Supabase SQL Editor:
 ```sql
 CREATE TABLE computer_submissions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  asset_tag VARCHAR(255) NOT NULL,
+  unique_id VARCHAR(255) NOT NULL UNIQUE,
+  inventory_type VARCHAR(50) NOT NULL,
   serial_number VARCHAR(255) NOT NULL,
-  computer_type VARCHAR(50) NOT NULL,
+  computer_type VARCHAR(50),
   brand VARCHAR(100) NOT NULL,
   model VARCHAR(100) NOT NULL,
   processor VARCHAR(100) NOT NULL,
   ram VARCHAR(50) NOT NULL,
   storage VARCHAR(50) NOT NULL,
   operating_system VARCHAR(100) NOT NULL,
-  assigned_to VARCHAR(255) NOT NULL,
-  section VARCHAR(255) NOT NULL,
   purchase_date DATE NOT NULL,
   remarks TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Create index on unique_id for faster lookups
+CREATE INDEX idx_computer_submissions_unique_id ON computer_submissions(unique_id);
+CREATE INDEX idx_computer_submissions_inventory_type ON computer_submissions(inventory_type);
 
 -- Enable Row Level Security
 ALTER TABLE computer_submissions ENABLE ROW LEVEL SECURITY;
@@ -52,33 +55,43 @@ CREATE POLICY "Allow all operations" ON computer_submissions
   FOR ALL USING (true);
 ```
 
-### Table 2: computer_transfers
+**Important Notes:**
+- **Unique ID Format**: `OFN/ITC/INV/{TYPE}-{NUMBER}`
+  - Examples: `OFN/ITC/INV/PC-001`, `OFN/ITC/INV/CPU-025`, `OFN/ITC/INV/Printer-100`
+  - Numbers auto-increment per inventory type (001, 002, 003... 999, 1000...)
+- **Inventory Types**: PC, CPU, Printer, UPS
+- **Computer Type Field**: Only applicable for PC inventory type (desktop, laptop, workstation, server)
+  - **Note**: Laptops are selected as "laptop" in Computer Type when Inventory Type is "PC"
+- **Section Field**: Removed from submissions (now only in issues)
+
+### Table 2: computer_issues
 Run this SQL in Supabase SQL Editor:
 
 ```sql
-CREATE TABLE computer_transfers (
+CREATE TABLE computer_issues (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  asset_tag VARCHAR(255) NOT NULL,
+  inventory_id UUID NOT NULL,
+  unique_id VARCHAR(255) NOT NULL,
   serial_number VARCHAR(255) NOT NULL,
-  action_type VARCHAR(50) NOT NULL,
-  from_section VARCHAR(255) NOT NULL,
-  to_section VARCHAR(255),
-  transferred_to VARCHAR(255),
-  reason TEXT NOT NULL,
-  exit_date DATE NOT NULL,
-  approved_by VARCHAR(255) NOT NULL,
-  condition VARCHAR(50) NOT NULL,
-  accessories TEXT,
+  employee_section VARCHAR(255) NOT NULL,
+  location VARCHAR(255) NOT NULL,
+  issued_to VARCHAR(255) NOT NULL,
+  issue_date DATE NOT NULL,
   remarks TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  FOREIGN KEY (inventory_id) REFERENCES computer_submissions(id)
 );
 
+-- Create indexes for better query performance
+CREATE INDEX idx_computer_issues_inventory_id ON computer_issues(inventory_id);
+CREATE INDEX idx_computer_issues_unique_id ON computer_issues(unique_id);
+
 -- Enable Row Level Security
-ALTER TABLE computer_transfers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE computer_issues ENABLE ROW LEVEL SECURITY;
 
 -- Create policy to allow all operations
-CREATE POLICY "Allow all operations" ON computer_transfers
+CREATE POLICY "Allow all operations" ON computer_issues
   FOR ALL USING (true);
 ```
 
@@ -92,35 +105,35 @@ npm run dev
 
 ### computer_submissions
 - `id`: UUID (Primary Key)
-- `asset_tag`: String
+- `unique_id`: String (Unique, Auto-generated format: OFN/ITC/INV/{TYPE}-{NUMBER})
+- `inventory_type`: String (PC, CPU, Printer, UPS)
 - `serial_number`: String
-- `computer_type`: String (desktop, laptop, workstation, server)
+- `computer_type`: String (nullable - only for PC: desktop, laptop, workstation, server)
 - `brand`: String
 - `model`: String
 - `processor`: String
 - `ram`: String
 - `storage`: String
 - `operating_system`: String
-- `assigned_to`: String
-- `section`: String
 - `purchase_date`: Date
 - `remarks`: Text
 - `created_at`: Timestamp
 - `updated_at`: Timestamp
 
-### computer_transfers
+**Field Notes:**
+- `computer_type` is only populated when `inventory_type` is "PC"
+- For laptops: Use `inventory_type` = "PC" and `computer_type` = "laptop"
+- `section` field removed (now only tracked in computer_issues table)
+
+### computer_issues
 - `id`: UUID (Primary Key)
-- `asset_tag`: String
+- `inventory_id`: UUID (Foreign Key to computer_submissions)
+- `unique_id`: String (Copied from computer_submissions for quick reference)
 - `serial_number`: String
-- `action_type`: String (transfer, exit, return, repair)
-- `from_section`: String
-- `to_section`: String (nullable)
-- `transferred_to`: String (nullable)
-- `reason`: Text
-- `exit_date`: Date
-- `approved_by`: String
-- `condition`: String (excellent, good, fair, poor, damaged)
-- `accessories`: Text
+- `employee_section`: String (Security Section, IT Department, HR Department, etc.)
+- `location`: String (ITC Building, Security Office, Admin Block, etc.)
+- `issued_to`: String (employee name)
+- `issue_date`: Date
 - `remarks`: Text
 - `created_at`: Timestamp
 - `updated_at`: Timestamp

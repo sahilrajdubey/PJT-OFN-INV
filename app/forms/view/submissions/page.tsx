@@ -9,20 +9,26 @@ export const dynamic = 'force-dynamic';
 
 interface ComputerSubmission {
     id: string;
-    asset_tag: string;
+    unique_id: string;
+    inventory_type: string;
     serial_number: string;
-    computer_type: string;
+    computer_type: string | null;
     brand: string;
     model: string;
     processor: string;
     ram: string;
     storage: string;
     operating_system: string;
-    assigned_to: string;
-    section: string;
     purchase_date: string;
     remarks: string;
     created_at: string;
+    is_issued?: boolean;
+    issue_details?: {
+        issued_to: string;
+        employee_section: string;
+        location: string;
+        issue_date: string;
+    };
 }
 
 export default function ViewSubmissionsPage() {
@@ -30,6 +36,8 @@ export default function ViewSubmissionsPage() {
     const [submissions, setSubmissions] = useState<ComputerSubmission[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'issued'>('all');
+    const [filterInventoryType, setFilterInventoryType] = useState<'all' | 'PC' | 'CPU' | 'Printer' | 'UPS'>('all');
 
     useEffect(() => {
         fetchSubmissions();
@@ -37,17 +45,139 @@ export default function ViewSubmissionsPage() {
 
     const fetchSubmissions = async () => {
         try {
-            const { data, error } = await supabase
+            // Fetch all submissions
+            const { data: submissionsData, error: submissionError } = await supabase
                 .from('computer_submissions')
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            if (error) throw error;
-            setSubmissions(data || []);
+            if (submissionError) throw submissionError;
+
+            // Fetch all issues with details
+            const { data: issuesData, error: issueError } = await supabase
+                .from('computer_issues')
+                .select('inventory_id, issued_to, employee_section, location, issue_date');
+
+            if (issueError) throw issueError;
+
+            // Create a map of issued inventory with details
+            const issuesMap = new Map(
+                issuesData?.map(issue => [
+                    issue.inventory_id,
+                    {
+                        issued_to: issue.issued_to,
+                        employee_section: issue.employee_section,
+                        location: issue.location,
+                        issue_date: issue.issue_date
+                    }
+                ]) || []
+            );
+
+            // Merge submission data with issue status
+            const enrichedSubmissions = submissionsData?.map(submission => ({
+                ...submission,
+                is_issued: issuesMap.has(submission.id),
+                issue_details: issuesMap.get(submission.id)
+            })) || [];
+
+            setSubmissions(enrichedSubmissions);
         } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const filteredSubmissions = submissions.filter(submission => {
+        // Filter by status
+        if (filterStatus === 'available' && submission.is_issued) return false;
+        if (filterStatus === 'issued' && !submission.is_issued) return false;
+        
+        // Filter by inventory type
+        if (filterInventoryType !== 'all' && submission.inventory_type !== filterInventoryType) return false;
+        
+        return true;
+    });
+
+    const handleDelete = async (id: string, uniqueId: string) => {
+        if (!confirm(`Are you sure you want to delete inventory ${uniqueId}?\nThis action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            // Check if inventory is issued
+            const { data: issueCheck } = await supabase
+                .from('computer_issues')
+                .select('id')
+                .eq('inventory_id', id)
+                .single();
+
+            if (issueCheck) {
+                alert('Cannot delete! This inventory is currently issued. Please remove the issue record first.');
+                return;
+            }
+
+            // Delete from submissions
+            const { error } = await supabase
+                .from('computer_submissions')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+
+            alert('Inventory deleted successfully!');
+            fetchSubmissions();
+        } catch (error: any) {
+            alert('Error deleting inventory: ' + error.message);
+        }
+    };
+
+    const exportToPDF = async () => {
+        try {
+            const jsPDF = (await import('jspdf')).default;
+            const autoTable = (await import('jspdf-autotable')).default;
+            
+            const doc = new jsPDF('l', 'mm', 'a4'); // Landscape orientation
+            
+            // Add title
+            doc.setFontSize(18);
+            doc.text('Inventory Database Report', 14, 15);
+            
+            // Add filters info
+            doc.setFontSize(10);
+            doc.text(`Status: ${filterStatus.toUpperCase()} | Type: ${filterInventoryType}`, 14, 22);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 14, 27);
+            doc.text(`Total Records: ${filteredSubmissions.length}`, 14, 32);
+
+            // Prepare table data
+            const tableData = filteredSubmissions.map(submission => [
+                submission.is_issued ? 'Issued' : 'Available',
+                submission.unique_id,
+                submission.inventory_type,
+                submission.serial_number,
+                submission.computer_type || '-',
+                submission.brand,
+                submission.model,
+                submission.issue_details?.issued_to || '-',
+                submission.issue_details?.location || '-',
+                new Date(submission.purchase_date).toLocaleDateString()
+            ]);
+
+            // Add table
+            autoTable(doc, {
+                head: [['Status', 'Unique ID', 'Type', 'Serial', 'PC Type', 'Brand', 'Model', 'Issued To', 'Location', 'Purchase Date']],
+                body: tableData,
+                startY: 37,
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [59, 130, 246] },
+                alternateRowStyles: { fillColor: [245, 247, 250] }
+            });
+
+            // Save PDF
+            doc.save(`inventory-report-${new Date().getTime()}.pdf`);
+        } catch (error) {
+            console.error('Error generating PDF:', error);
+            alert('Error generating PDF. Please try again.');
         }
     };
 
@@ -65,10 +195,112 @@ export default function ViewSubmissionsPage() {
                     >
                         ← Back to View Data
                     </button>
-                    <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
-                        Submitted Computers Database
-                    </h1>
-                    <p className="text-white/60">All registered computer equipment</p>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
+                                Submitted Computers Database
+                            </h1>
+                            <p className="text-white/60">All registered computer equipment</p>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={exportToPDF}
+                                disabled={filteredSubmissions.length === 0}
+                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium hover:shadow-lg hover:shadow-green-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Export PDF
+                            </button>
+                            <button
+                                onClick={() => setFilterStatus('all')}
+                                className={`px-4 py-2 rounded-lg transition-all ${
+                                    filterStatus === 'all'
+                                        ? 'bg-white/20 text-white border border-white/40'
+                                        : 'bg-white/5 text-white/60 border border-white/20 hover:bg-white/10'
+                                }`}
+                            >
+                                All ({submissions.length})
+                            </button>
+                            <button
+                                onClick={() => setFilterStatus('available')}
+                                className={`px-4 py-2 rounded-lg transition-all ${
+                                    filterStatus === 'available'
+                                        ? 'bg-green-500/20 text-green-200 border border-green-500/40'
+                                        : 'bg-white/5 text-white/60 border border-white/20 hover:bg-white/10'
+                                }`}
+                            >
+                                Available ({submissions.filter(s => !s.is_issued).length})
+                            </button>
+                            <button
+                                onClick={() => setFilterStatus('issued')}
+                                className={`px-4 py-2 rounded-lg transition-all ${
+                                    filterStatus === 'issued'
+                                        ? 'bg-orange-500/20 text-orange-200 border border-orange-500/40'
+                                        : 'bg-white/5 text-white/60 border border-white/20 hover:bg-white/10'
+                                }`}
+                            >
+                                Issued ({submissions.filter(s => s.is_issued).length})
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Inventory Type Filter Tabs */}
+                <div className="mb-6 flex justify-center">
+                    <div className="inline-flex gap-2 backdrop-blur-[50px] bg-white/5 border border-white/30 rounded-xl p-2">
+                        <button
+                            onClick={() => setFilterInventoryType('all')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                filterInventoryType === 'all'
+                                    ? 'bg-white/20 text-white'
+                                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            All Types
+                        </button>
+                        <button
+                            onClick={() => setFilterInventoryType('PC')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                filterInventoryType === 'PC'
+                                    ? 'bg-blue-500/30 text-blue-200 border border-blue-500/50'
+                                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            PC ({submissions.filter(s => s.inventory_type === 'PC').length})
+                        </button>
+                        <button
+                            onClick={() => setFilterInventoryType('CPU')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                filterInventoryType === 'CPU'
+                                    ? 'bg-purple-500/30 text-purple-200 border border-purple-500/50'
+                                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            CPU ({submissions.filter(s => s.inventory_type === 'CPU').length})
+                        </button>
+                        <button
+                            onClick={() => setFilterInventoryType('Printer')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                filterInventoryType === 'Printer'
+                                    ? 'bg-green-500/30 text-green-200 border border-green-500/50'
+                                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            Printer ({submissions.filter(s => s.inventory_type === 'Printer').length})
+                        </button>
+                        <button
+                            onClick={() => setFilterInventoryType('UPS')}
+                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                filterInventoryType === 'UPS'
+                                    ? 'bg-yellow-500/30 text-yellow-200 border border-yellow-500/50'
+                                    : 'text-white/60 hover:text-white hover:bg-white/10'
+                            }`}
+                        >
+                            UPS ({submissions.filter(s => s.inventory_type === 'UPS').length})
+                        </button>
+                    </div>
                 </div>
 
                 {loading ? (
@@ -81,49 +313,87 @@ export default function ViewSubmissionsPage() {
                         <p className="text-red-200 mb-4">{error}</p>
                         <p className="text-white/60 text-sm">Please check your Supabase configuration</p>
                     </div>
-                ) : submissions.length === 0 ? (
+                ) : filteredSubmissions.length === 0 ? (
                     <div className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-8 text-center">
-                        <p className="text-white/60">No submissions found</p>
+                        <p className="text-white/60">
+                            {filterStatus === 'available' && 'No available inventory found'}
+                            {filterStatus === 'issued' && 'No issued inventory found'}
+                            {filterStatus === 'all' && 'No submissions found'}
+                        </p>
                     </div>
                 ) : (
                     <div className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-6 shadow-2xl overflow-x-auto">
                         <table className="w-full text-white">
                             <thead>
                                 <tr className="border-b border-white/30">
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Asset Tag</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold">Status</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold">Unique ID</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold">Inventory Type</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold">Serial Number</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Type</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold">PC Type</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold">Brand</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold">Model</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Processor</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">RAM</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Storage</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">OS</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Assigned To</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Section</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold">Issued To</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold">Location</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold">Purchase Date</th>
+                                    <th className="text-center py-3 px-4 text-sm font-semibold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {submissions.map((submission, index) => (
+                                {filteredSubmissions.map((submission, index) => (
                                     <tr
                                         key={submission.id}
                                         className={`border-b border-white/10 hover:bg-white/5 transition-colors ${
                                             index % 2 === 0 ? 'bg-white/5' : ''
                                         }`}
                                     >
-                                        <td className="py-3 px-4 text-sm">{submission.asset_tag}</td>
+                                        <td className="py-3 px-4 text-sm">
+                                            {submission.is_issued ? (
+                                                <span className="px-2 py-1 bg-orange-500/20 text-orange-200 text-xs rounded-full">
+                                                    Issued
+                                                </span>
+                                            ) : (
+                                                <span className="px-2 py-1 bg-green-500/20 text-green-200 text-xs rounded-full">
+                                                    Available
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4 text-sm font-semibold text-cyan-300">{submission.unique_id}</td>
+                                        <td className="py-3 px-4 text-sm">
+                                            <span className="px-2 py-1 bg-blue-500/20 text-blue-200 text-xs rounded-full">
+                                                {submission.inventory_type}
+                                            </span>
+                                        </td>
                                         <td className="py-3 px-4 text-sm">{submission.serial_number}</td>
-                                        <td className="py-3 px-4 text-sm capitalize">{submission.computer_type}</td>
+                                        <td className="py-3 px-4 text-sm">
+                                            {submission.computer_type ? (
+                                                <span className="capitalize">{submission.computer_type}</span>
+                                            ) : (
+                                                <span className="text-white/40">-</span>
+                                            )}
+                                        </td>
                                         <td className="py-3 px-4 text-sm">{submission.brand}</td>
                                         <td className="py-3 px-4 text-sm">{submission.model}</td>
-                                        <td className="py-3 px-4 text-sm">{submission.processor}</td>
-                                        <td className="py-3 px-4 text-sm">{submission.ram}</td>
-                                        <td className="py-3 px-4 text-sm">{submission.storage}</td>
-                                        <td className="py-3 px-4 text-sm">{submission.operating_system}</td>
-                                        <td className="py-3 px-4 text-sm">{submission.assigned_to}</td>
-                                        <td className="py-3 px-4 text-sm">{submission.section}</td>
+                                        <td className="py-3 px-4 text-sm">
+                                            {submission.issue_details?.issued_to || (
+                                                <span className="text-white/40">-</span>
+                                            )}
+                                        </td>
+                                        <td className="py-3 px-4 text-sm">
+                                            {submission.issue_details?.location || (
+                                                <span className="text-white/40">-</span>
+                                            )}
+                                        </td>
                                         <td className="py-3 px-4 text-sm">{new Date(submission.purchase_date).toLocaleDateString()}</td>
+                                        <td className="py-3 px-4 text-center">
+                                            <button
+                                                onClick={() => handleDelete(submission.id, submission.unique_id)}
+                                                className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-200 text-xs rounded-lg transition-all"
+                                                title="Delete inventory"
+                                            >
+                                                Delete
+                                            </button>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>

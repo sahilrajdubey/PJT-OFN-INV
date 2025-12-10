@@ -2,11 +2,13 @@
 
 import { useRouter } from 'next/navigation';
 import DarkVeil from '@/components/DarkVeil';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function ViewDataPage() {
     const router = useRouter();
 
     return (
+        <ProtectedRoute>
         <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-black">
             <div className="absolute inset-0 w-full h-full">
                 <DarkVeil />
@@ -48,25 +50,26 @@ export default function ViewDataPage() {
                         </div>
                     </button>
 
-                    {/* View Transfer Records */}
+                    {/* View Issue Records */}
                     <button
-                        onClick={() => router.push('/forms/view/transfers')}
+                        onClick={() => router.push('/forms/view/issues')}
                         className="group relative p-8 rounded-2xl backdrop-blur-[50px] bg-white/10 border border-white/40 shadow-2xl transition-all duration-500 hover:backdrop-blur-[60px] hover:bg-white/15 hover:scale-[1.02] hover:shadow-purple-500/30"
                     >
                         <div className="flex flex-col items-center text-center space-y-4">
                             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                                 <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                 </svg>
                             </div>
-                            <h2 className="text-2xl font-bold text-white">Transfer Records</h2>
+                            <h2 className="text-2xl font-bold text-white">Issue Records</h2>
                             <p className="text-white/70 text-sm">
-                                View all computer transfer and exit records
+                                View all computer issue records
                             </p>
                         </div>
                     </button>
                 </div>
             </div>
         </div>
+        </ProtectedRoute>
     );
 }
