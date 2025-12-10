@@ -37,22 +37,23 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-black">
+        <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-black px-4 py-8">
             {/* Beams Background - Fullscreen */}
             <div className="absolute inset-0 w-full h-full">
                 <DarkVeil />
             </div>
 
             {/* Tilted Card Login Box */}
-            <div className="relative z-10 flex items-center justify-center w-full h-full">
+            <div className="relative z-10 flex items-center justify-center w-full h-full pb-8 md:pb-16">
+                <div className="w-full max-w-md px-4">
                 <TiltedCard
                     imageSrc="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='450' height='550'%3E%3Crect width='450' height='550' fill='transparent'/%3E%3C/svg%3E"
                     altText="Login Card"
                     captionText=""
-                    containerHeight="450px"
-                    containerWidth="450px"
-                    imageHeight="450px"
-                    imageWidth="450px"
+                    containerHeight="auto"
+                    containerWidth="100%"
+                    imageHeight="auto"
+                    imageWidth="100%"
                     scaleOnHover={1.02}
                     rotateAmplitude={8}
                     showMobileWarning={false}
@@ -60,36 +61,36 @@ export default function LoginPage() {
                     displayOverlayContent={true}
                 >
                     <div
-                        className="w-full  p-10 rounded-xl backdrop-blur-[50px] bg-white/10 border border-white/40 shadow-2xl transition-all duration-500 hover:backdrop-blur-[60px] hover:bg-white/15"
+                        className="w-full p-5 md:p-10 rounded-xl backdrop-blur-[50px] bg-white/10 border border-white/40 shadow-2xl transition-all duration-500 hover:backdrop-blur-[60px] hover:bg-white/15"
                         style={{
                             backdropFilter: 'blur(50px)',
                             WebkitBackdropFilter: 'blur(50px)',
                         }}
                     >
                         {/* Logo and Title */}
-                        <div className="flex flex-col items-center mb-8">
+                        <div className="flex flex-col items-center mb-5 md:mb-8">
                             <img 
                                 src="/favicon.ico" 
                                 alt="OFN Logo" 
-                                className="w-16 h-16 mb-4"
+                                className="w-10 h-10 md:w-16 md:h-16 mb-2 md:mb-4"
                             />
-                            <h1 className="text-2xl font-bold text-white text-center tracking-wider">
+                            <h1 className="text-lg md:text-2xl font-bold text-white text-center tracking-wider">
                                 OFN-INV-MGMT
                             </h1>
-                            <p className="text-white/60 text-sm mt-2">Admin Portal</p>
+                            <p className="text-white/60 text-xs md:text-sm mt-1 md:mt-2">Admin Portal</p>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-3 md:space-y-5">
                             {/* Error Message */}
                             {error && (
-                                <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm text-center">
+                                <div className="p-2.5 md:p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-xs md:text-sm text-center">
                                     {error}
                                 </div>
                             )}
 
                             {/* Username */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-white/80 ml-1">
+                            <div className="space-y-1.5 md:space-y-2">
+                                <label className="text-xs md:text-sm font-medium text-white/80 ml-1">
                                     Username
                                 </label>
                                 <input
@@ -99,13 +100,13 @@ export default function LoginPage() {
                                     placeholder="Enter your username"
                                     disabled={isLoading}
                                     autoFocus
-                                    className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 focus:bg-white/15 transition-all duration-300 hover:border-white/40"
+                                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base bg-white/10 border border-white/30 rounded-lg md:rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 focus:bg-white/15 transition-all duration-300 hover:border-white/40"
                                 />
                             </div>
 
                             {/* Password */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-white/80 ml-1">
+                            <div className="space-y-1.5 md:space-y-2">
+                                <label className="text-xs md:text-sm font-medium text-white/80 ml-1">
                                     Password
                                 </label>
                                 <input
@@ -114,7 +115,7 @@ export default function LoginPage() {
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Enter your password"
                                     disabled={isLoading}
-                                    className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 focus:bg-white/15 transition-all duration-300 hover:border-white/40"
+                                    className="w-full px-3 md:px-4 py-2 md:py-3 text-sm md:text-base bg-white/10 border border-white/30 rounded-lg md:rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 focus:bg-white/15 transition-all duration-300 hover:border-white/40"
                                 />
                             </div>
 
@@ -122,13 +123,14 @@ export default function LoginPage() {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full mt-4 py-3 rounded-xl font-semibold text-white text-lg tracking-wide transition-colors duration-200 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full mt-3 md:mt-4 py-2.5 md:py-3 rounded-lg md:rounded-xl font-semibold text-white text-sm md:text-lg tracking-wide transition-colors duration-200 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isLoading ? 'Logging in...' : 'Login'}
                             </button>
                         </form>
                     </div>
                 </TiltedCard>
+                </div>
             </div>
         </div>
     );

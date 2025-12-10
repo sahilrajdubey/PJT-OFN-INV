@@ -15,20 +15,20 @@ export default function FormSelectionPage() {
 
     return (
         <ProtectedRoute>
-        <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-black">
+        <div className="min-h-screen w-full relative overflow-hidden flex items-center justify-center bg-black px-4 py-8">
             <div className="absolute inset-0 w-full h-full">
                 <DarkVeil />
             </div>
 
-            <div className="relative z-10 w-full max-w-5xl px-6">
-                <h1 className="text-5xl font-bold text-white text-center mb-4 tracking-wider">
+            <div className="relative z-10 w-full max-w-5xl px-4 md:px-6">
+                <h1 className="text-3xl md:text-5xl font-bold text-white text-center mb-3 md:mb-4 tracking-wider">
                     Inventory Management
                 </h1>
-                <p className="text-white/60 text-center mb-16 text-lg">
+                <p className="text-white/60 text-center mb-8 md:mb-16 text-sm md:text-lg">
                     Select the form you want to fill
                 </p>
 
-                <div className="grid md:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
                     {/* Computer Submission Form Card */}
                     <button
                         onClick={() => router.push('/forms/submission')}
@@ -84,10 +84,10 @@ export default function FormSelectionPage() {
                     </button>
                 </div>
 
-                <div className="mt-12 text-center">
+                <div className="mt-8 md:mt-12 text-center">
                     <button
                         onClick={handleLogout}
-                        className="text-white/60 hover:text-white transition-colors duration-300 text-sm"
+                        className="text-white/60 hover:text-white transition-colors duration-300 text-xs md:text-sm"
                     >
                         ← Logout
                     </button>

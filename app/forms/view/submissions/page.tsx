@@ -182,40 +182,41 @@ export default function ViewSubmissionsPage() {
     };
 
     return (
-        <div className="min-h-screen w-full relative overflow-hidden bg-black py-12">
+        <div className="min-h-screen w-full relative overflow-hidden bg-black py-6 md:py-12">
             <div className="absolute inset-0 w-full h-full">
                 <DarkVeil />
             </div>
 
-            <div className="relative z-10 w-full max-w-7xl mx-auto px-6">
-                <div className="mb-8">
+            <div className="relative z-10 w-full max-w-7xl mx-auto px-4 md:px-6">
+                <div className="mb-6 md:mb-8">
                     <button
                         onClick={() => router.push('/forms/view')}
-                        className="text-white/60 hover:text-white transition-colors duration-300 text-sm mb-4"
+                        className="text-white/60 hover:text-white transition-colors duration-300 text-xs md:text-sm mb-4"
                     >
                         ← Back to View Data
                     </button>
-                    <div className="flex justify-between items-center">
+                    <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
                         <div>
-                            <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
+                            <h1 className="text-2xl md:text-4xl font-bold text-white mb-2 tracking-wider">
                                 Submitted Inventory Database
                             </h1>
-                            <p className="text-white/60">All registered inventory equipment</p>
+                            <p className="text-white/60 text-sm md:text-base">All registered inventory equipment</p>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap gap-2">
                             <button
                                 onClick={exportToPDF}
                                 disabled={filteredSubmissions.length === 0}
-                                className="px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium hover:shadow-lg hover:shadow-green-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                className="px-3 md:px-4 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium hover:shadow-lg hover:shadow-green-500/50 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 text-xs md:text-sm"
                             >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
-                                Export PDF
+                                <span className="hidden md:inline">Export PDF</span>
+                                <span className="md:hidden">PDF</span>
                             </button>
                             <button
                                 onClick={() => setFilterStatus('all')}
-                                className={`px-4 py-2 rounded-lg transition-all ${
+                                className={`px-3 md:px-4 py-2 rounded-lg transition-all text-xs md:text-sm ${
                                     filterStatus === 'all'
                                         ? 'bg-white/20 text-white border border-white/40'
                                         : 'bg-white/5 text-white/60 border border-white/20 hover:bg-white/10'
@@ -248,11 +249,11 @@ export default function ViewSubmissionsPage() {
                 </div>
 
                 {/* Inventory Type Filter Tabs */}
-                <div className="mb-6 flex justify-center">
-                    <div className="inline-flex gap-2 backdrop-blur-[50px] bg-white/5 border border-white/30 rounded-xl p-2">
+                <div className="mb-6 flex justify-center overflow-x-auto">
+                    <div className="inline-flex gap-2 backdrop-blur-[50px] bg-white/5 border border-white/30 rounded-xl p-2 min-w-max">
                         <button
                             onClick={() => setFilterInventoryType('all')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                                 filterInventoryType === 'all'
                                     ? 'bg-white/20 text-white'
                                     : 'text-white/60 hover:text-white hover:bg-white/10'
@@ -262,7 +263,7 @@ export default function ViewSubmissionsPage() {
                         </button>
                         <button
                             onClick={() => setFilterInventoryType('PC')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                                 filterInventoryType === 'PC'
                                     ? 'bg-blue-500/30 text-blue-200 border border-blue-500/50'
                                     : 'text-white/60 hover:text-white hover:bg-white/10'
@@ -272,7 +273,7 @@ export default function ViewSubmissionsPage() {
                         </button>
                         <button
                             onClick={() => setFilterInventoryType('CPU')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                                 filterInventoryType === 'CPU'
                                     ? 'bg-purple-500/30 text-purple-200 border border-purple-500/50'
                                     : 'text-white/60 hover:text-white hover:bg-white/10'
@@ -282,7 +283,7 @@ export default function ViewSubmissionsPage() {
                         </button>
                         <button
                             onClick={() => setFilterInventoryType('Printer')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                                 filterInventoryType === 'Printer'
                                     ? 'bg-green-500/30 text-green-200 border border-green-500/50'
                                     : 'text-white/60 hover:text-white hover:bg-white/10'
@@ -292,7 +293,7 @@ export default function ViewSubmissionsPage() {
                         </button>
                         <button
                             onClick={() => setFilterInventoryType('UPS')}
-                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
                                 filterInventoryType === 'UPS'
                                     ? 'bg-yellow-500/30 text-yellow-200 border border-yellow-500/50'
                                     : 'text-white/60 hover:text-white hover:bg-white/10'
@@ -322,21 +323,21 @@ export default function ViewSubmissionsPage() {
                         </p>
                     </div>
                 ) : (
-                    <div className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-6 shadow-2xl overflow-x-auto">
-                        <table className="w-full text-white">
+                    <div className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-4 md:p-6 shadow-2xl overflow-x-auto">
+                        <table className="w-full text-white min-w-[800px]">
                             <thead>
                                 <tr className="border-b border-white/30">
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Status</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Unique ID</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Inventory Type</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Serial Number</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">PC Type</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Brand</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Model</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Issued To</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Location</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Purchase Date</th>
-                                    <th className="text-center py-3 px-4 text-sm font-semibold">Actions</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Status</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Unique ID</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Inventory Type</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Serial Number</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">PC Type</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Brand</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Model</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Issued To</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Location</th>
+                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Purchase Date</th>
+                                    <th className="text-center py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Actions</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -347,7 +348,7 @@ export default function ViewSubmissionsPage() {
                                             index % 2 === 0 ? 'bg-white/5' : ''
                                         }`}
                                     >
-                                        <td className="py-3 px-4 text-sm">
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">
                                             {submission.is_issued ? (
                                                 <span className="px-2 py-1 bg-orange-500/20 text-orange-200 text-xs rounded-full">
                                                     Issued
@@ -358,33 +359,33 @@ export default function ViewSubmissionsPage() {
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="py-3 px-4 text-sm font-semibold text-cyan-300">{submission.unique_id}</td>
-                                        <td className="py-3 px-4 text-sm">
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold text-cyan-300">{submission.unique_id}</td>
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">
                                             <span className="px-2 py-1 bg-blue-500/20 text-blue-200 text-xs rounded-full">
                                                 {submission.inventory_type}
                                             </span>
                                         </td>
-                                        <td className="py-3 px-4 text-sm">{submission.serial_number}</td>
-                                        <td className="py-3 px-4 text-sm">
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">{submission.serial_number}</td>
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">
                                             {submission.computer_type ? (
                                                 <span className="capitalize">{submission.computer_type}</span>
                                             ) : (
                                                 <span className="text-white/40">-</span>
                                             )}
                                         </td>
-                                        <td className="py-3 px-4 text-sm">{submission.brand}</td>
-                                        <td className="py-3 px-4 text-sm">{submission.model}</td>
-                                        <td className="py-3 px-4 text-sm">
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">{submission.brand}</td>
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">{submission.model}</td>
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">
                                             {submission.issue_details?.issued_to || (
                                                 <span className="text-white/40">-</span>
                                             )}
                                         </td>
-                                        <td className="py-3 px-4 text-sm">
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">
                                             {submission.issue_details?.location || (
                                                 <span className="text-white/40">-</span>
                                             )}
                                         </td>
-                                        <td className="py-3 px-4 text-sm">{new Date(submission.purchase_date).toLocaleDateString()}</td>
+                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">{new Date(submission.purchase_date).toLocaleDateString()}</td>
                                         <td className="py-3 px-4 text-center">
                                             <button
                                                 onClick={() => handleDelete(submission.id, submission.unique_id)}
