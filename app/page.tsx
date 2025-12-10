@@ -5,21 +5,34 @@ import { useRouter } from 'next/navigation';
 import Beams from '@/components/Beams';
 import TiltedCard from '@/components/TiltedCard';
 import DarkVeil from '@/components/DarkVeil';
+import { setAuthToken } from '@/lib/auth';
 
 export default function LoginPage() {
     const router = useRouter();
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState('');
+
+    const VALID_USERNAME = process.env.NEXT_PUBLIC_ADMIN_USERNAME;
+    const VALID_PASSWORD = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         if (!username.trim() || !password.trim()) return;
 
         setIsLoading(true);
+        setError('');
+
         setTimeout(() => {
-            setIsLoading(false);
-            router.push('/forms');
+            if (username === VALID_USERNAME && password === VALID_PASSWORD) {
+                setAuthToken('authenticated');
+                setIsLoading(false);
+                router.push('/forms');
+            } else {
+                setIsLoading(false);
+                setError('Invalid username or password');
+            }
         }, 1000);
     };
 
@@ -40,7 +53,7 @@ export default function LoginPage() {
                     containerWidth="450px"
                     imageHeight="450px"
                     imageWidth="450px"
-                    scaleOnHover={0.5}
+                    scaleOnHover={1.02}
                     rotateAmplitude={8}
                     showMobileWarning={false}
                     showTooltip={false}
@@ -58,6 +71,13 @@ export default function LoginPage() {
                         </h1>
 
                         <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Error Message */}
+                            {error && (
+                                <div className="p-3 rounded-lg bg-red-500/20 border border-red-500/50 text-red-200 text-sm text-center">
+                                    {error}
+                                </div>
+                            )}
+
                             {/* Username */}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-white/80 ml-1">
@@ -93,15 +113,9 @@ export default function LoginPage() {
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="w-full mt-4 py-3 rounded-xl font-bold text-white text-lg tracking-wide transition-all duration-300 relative overflow-hidden group hover:shadow-lg hover:shadow-cyan-500/50 hover:scale-[1.02] active:scale-[0.98]"
-                                style={{
-                                    background: 'linear-gradient(90deg, #06b6d4 0%, #3b82f6 100%)',
-                                }}
+                                className="w-full mt-4 py-3 rounded-xl font-semibold text-white text-lg tracking-wide transition-colors duration-200 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <span className="relative z-10">
-                                    {isLoading ? 'Logging in...' : 'LOGIN'}
-                                </span>
-                                <div className="absolute inset-0 bg-white/20 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                                {isLoading ? 'Logging in...' : 'Login'}
                             </button>
                         </form>
                     </div>
