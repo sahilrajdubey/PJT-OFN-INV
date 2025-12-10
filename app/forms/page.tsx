@@ -40,9 +40,9 @@ export default function FormSelectionPage() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                                 </svg>
                             </div>
-                            <h2 className="text-2xl font-bold text-white">Computer Submission</h2>
+                            <h2 className="text-2xl font-bold text-white">Inventory Submission</h2>
                             <p className="text-white/70 text-sm">
-                                Register new computer equipment into the inventory system
+                                Register new inventory equipment into the inventory system
                             </p>
                         </div>
                     </button>

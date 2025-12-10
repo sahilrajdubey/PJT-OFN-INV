@@ -198,9 +198,9 @@ export default function ViewSubmissionsPage() {
                     <div className="flex justify-between items-center">
                         <div>
                             <h1 className="text-4xl font-bold text-white mb-2 tracking-wider">
-                                Submitted Computers Database
+                                Submitted Inventory Database
                             </h1>
-                            <p className="text-white/60">All registered computer equipment</p>
+                            <p className="text-white/60">All registered inventory equipment</p>
                         </div>
                         <div className="flex gap-2">
                             <button
