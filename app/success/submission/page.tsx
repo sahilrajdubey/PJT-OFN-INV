@@ -75,6 +75,9 @@ function SubmissionSuccessContent() {
                     </div>
                 </div>
             </div>
+            <footer className="absolute bottom-4 w-full text-center text-sm text-white/60">
+                © Copyright {new Date().getFullYear()} Sahil Raj Dubey. All rights reserved.
+            </footer>
         </div>
     );
 }

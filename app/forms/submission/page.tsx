@@ -329,6 +329,9 @@ export default function ComputerSubmissionPage() {
                     </div>
                 </div>
             )}
+            <footer className="mt-8 pb-4 text-center text-sm text-white/60">
+                © Copyright {new Date().getFullYear()} Sahil Raj Dubey. All rights reserved.
+            </footer>
         </div>
         </ProtectedRoute>
     );

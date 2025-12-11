@@ -151,6 +151,9 @@ export default function LoginPage() {
                 </TiltedCard>
                 </div>
             </div>
+            <footer className="absolute bottom-4 w-full text-center text-sm text-white/60">
+                © Copyright {new Date().getFullYear()} by Sahil Raj Dubey. All rights reserved.
+            </footer>
         </div>
     );
 }
