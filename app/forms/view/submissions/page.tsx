@@ -38,6 +38,8 @@ export default function ViewSubmissionsPage() {
     const [error, setError] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'issued'>('all');
     const [filterInventoryType, setFilterInventoryType] = useState<'all' | 'PC' | 'CPU' | 'Printer' | 'UPS'>('all');
+    const [editingSubmission, setEditingSubmission] = useState<ComputerSubmission | null>(null);
+    const [editFormData, setEditFormData] = useState<Partial<ComputerSubmission>>({});
 
     useEffect(() => {
         fetchSubmissions();
@@ -129,6 +131,42 @@ export default function ViewSubmissionsPage() {
             fetchSubmissions();
         } catch (error: any) {
             alert('Error deleting inventory: ' + error.message);
+        }
+    };
+
+    const handleEdit = (submission: ComputerSubmission) => {
+        setEditingSubmission(submission);
+        setEditFormData({
+            serial_number: submission.serial_number,
+            computer_type: submission.computer_type,
+            brand: submission.brand,
+            model: submission.model,
+            processor: submission.processor,
+            ram: submission.ram,
+            storage: submission.storage,
+            operating_system: submission.operating_system,
+            purchase_date: submission.purchase_date,
+            remarks: submission.remarks
+        });
+    };
+
+    const handleUpdate = async () => {
+        if (!editingSubmission) return;
+
+        try {
+            const { error } = await supabase
+                .from('computer_submissions')
+                .update(editFormData)
+                .eq('id', editingSubmission.id);
+
+            if (error) throw error;
+
+            alert('Inventory updated successfully!');
+            setEditingSubmission(null);
+            setEditFormData({});
+            fetchSubmissions();
+        } catch (error: any) {
+            alert('Error updating inventory: ' + error.message);
         }
     };
 
@@ -387,18 +425,178 @@ export default function ViewSubmissionsPage() {
                                         </td>
                                         <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">{new Date(submission.purchase_date).toLocaleDateString()}</td>
                                         <td className="py-3 px-4 text-center">
-                                            <button
-                                                onClick={() => handleDelete(submission.id, submission.unique_id)}
-                                                className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-200 text-xs rounded-lg transition-all"
-                                                title="Delete inventory"
-                                            >
-                                                Delete
-                                            </button>
+                                            <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => handleEdit(submission)}
+                                                    className="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 text-blue-200 text-xs rounded-lg transition-all"
+                                                    title="Edit inventory"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(submission.id, submission.unique_id)}
+                                                    className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-200 text-xs rounded-lg transition-all"
+                                                    title="Delete inventory"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                )}
+
+                {/* Edit Modal */}
+                {editingSubmission && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <div className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold text-white">Edit Inventory</h2>
+                                <button
+                                    onClick={() => setEditingSubmission(null)}
+                                    className="text-white/60 hover:text-white transition-colors"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Unique ID (Read-only)</label>
+                                    <input
+                                        type="text"
+                                        value={editingSubmission.unique_id}
+                                        disabled
+                                        className="w-full px-4 py-2 bg-white/5 border border-white/30 rounded-lg text-white/50 cursor-not-allowed"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Serial Number</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.serial_number || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, serial_number: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                {editingSubmission.inventory_type === 'PC' && (
+                                    <div>
+                                        <label className="block text-white/80 text-sm mb-2">Computer Type</label>
+                                        <select
+                                            value={editFormData.computer_type || ''}
+                                            onChange={(e) => setEditFormData({...editFormData, computer_type: e.target.value})}
+                                            className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                        >
+                                            <option value="desktop">Desktop</option>
+                                            <option value="laptop">Laptop</option>
+                                            <option value="all-in-one">All-in-One</option>
+                                        </select>
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Brand</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.brand || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, brand: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Model</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.model || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, model: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Processor</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.processor || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, processor: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">RAM</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.ram || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, ram: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Storage</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.storage || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, storage: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Operating System</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.operating_system || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, operating_system: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Purchase Date</label>
+                                    <input
+                                        type="date"
+                                        value={editFormData.purchase_date || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, purchase_date: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Remarks</label>
+                                    <textarea
+                                        value={editFormData.remarks || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, remarks: e.target.value})}
+                                        rows={3}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        onClick={handleUpdate}
+                                        className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all"
+                                    >
+                                        Update
+                                    </button>
+                                    <button
+                                        onClick={() => setEditingSubmission(null)}
+                                        className="flex-1 px-6 py-3 bg-white/10 border border-white/30 text-white rounded-lg font-semibold hover:bg-white/20 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>

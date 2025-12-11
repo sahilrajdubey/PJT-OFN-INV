@@ -26,6 +26,8 @@ export default function ViewIssuesPage() {
     const [issues, setIssues] = useState<ComputerIssue[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
+    const [editingIssue, setEditingIssue] = useState<ComputerIssue | null>(null);
+    const [editFormData, setEditFormData] = useState<Partial<ComputerIssue>>({});
 
     useEffect(() => {
         fetchIssues();
@@ -64,6 +66,37 @@ export default function ViewIssuesPage() {
             fetchIssues();
         } catch (error: any) {
             alert('Error deleting issue: ' + error.message);
+        }
+    };
+
+    const handleEdit = (issue: ComputerIssue) => {
+        setEditingIssue(issue);
+        setEditFormData({
+            issued_to: issue.issued_to,
+            employee_section: issue.employee_section,
+            location: issue.location,
+            issue_date: issue.issue_date,
+            remarks: issue.remarks
+        });
+    };
+
+    const handleUpdate = async () => {
+        if (!editingIssue) return;
+
+        try {
+            const { error } = await supabase
+                .from('computer_issues')
+                .update(editFormData)
+                .eq('id', editingIssue.id);
+
+            if (error) throw error;
+
+            alert('Issue record updated successfully!');
+            setEditingIssue(null);
+            setEditFormData({});
+            fetchIssues();
+        } catch (error: any) {
+            alert('Error updating issue: ' + error.message);
         }
     };
 
@@ -187,18 +220,136 @@ export default function ViewIssuesPage() {
                                         <td className="py-3 px-4 text-sm">{new Date(issue.issue_date).toLocaleDateString()}</td>
                                         <td className="py-3 px-4 text-sm max-w-xs truncate" title={issue.remarks}>{issue.remarks || '-'}</td>
                                         <td className="py-3 px-4 text-center">
-                                            <button
-                                                onClick={() => handleDelete(issue.id, issue.unique_id)}
-                                                className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-200 text-xs rounded-lg transition-all"
-                                                title="Delete issue record"
-                                            >
-                                                Delete
-                                            </button>
+                                            <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => handleEdit(issue)}
+                                                    className="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 text-blue-200 text-xs rounded-lg transition-all"
+                                                    title="Edit issue record"
+                                                >
+                                                    Edit
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDelete(issue.id, issue.unique_id)}
+                                                    className="px-3 py-1 bg-red-500/20 hover:bg-red-500/30 border border-red-500/50 text-red-200 text-xs rounded-lg transition-all"
+                                                    title="Delete issue record"
+                                                >
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
                             </tbody>
                         </table>
+                    </div>
+                )}
+
+                {/* Edit Modal */}
+                {editingIssue && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <div className="backdrop-blur-[50px] bg-white/10 border border-white/40 rounded-2xl p-6 md:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                            <div className="flex justify-between items-center mb-6">
+                                <h2 className="text-2xl font-bold text-white">Edit Issue Record</h2>
+                                <button
+                                    onClick={() => setEditingIssue(null)}
+                                    className="text-white/60 hover:text-white transition-colors"
+                                >
+                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                            </div>
+
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Unique ID (Read-only)</label>
+                                    <input
+                                        type="text"
+                                        value={editingIssue.unique_id}
+                                        disabled
+                                        className="w-full px-4 py-2 bg-white/5 border border-white/30 rounded-lg text-white/50 cursor-not-allowed"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Issued To</label>
+                                    <input
+                                        type="text"
+                                        value={editFormData.issued_to || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, issued_to: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Employee Section</label>
+                                    <select
+                                        value={editFormData.employee_section || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, employee_section: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    >
+                                        <option value="">Select section</option>
+                                        <option value="Security">Security</option>
+                                        <option value="Administration">Administration</option>
+                                        <option value="IT Department">IT Department</option>
+                                        <option value="Finance">Finance</option>
+                                        <option value="HR">HR</option>
+                                        <option value="Operations">Operations</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Location</label>
+                                    <select
+                                        value={editFormData.location || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, location: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    >
+                                        <option value="">Select location</option>
+                                        <option value="ITC">ITC</option>
+                                        <option value="Security">Security</option>
+                                        <option value="Admin">Admin</option>
+                                        <option value="Main Office">Main Office</option>
+                                        <option value="Branch Office">Branch Office</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Issue Date</label>
+                                    <input
+                                        type="date"
+                                        value={editFormData.issue_date || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, issue_date: e.target.value})}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-white/80 text-sm mb-2">Remarks</label>
+                                    <textarea
+                                        value={editFormData.remarks || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, remarks: e.target.value})}
+                                        rows={3}
+                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                    />
+                                </div>
+
+                                <div className="flex gap-3 pt-4">
+                                    <button
+                                        onClick={handleUpdate}
+                                        className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-cyan-500/50 transition-all"
+                                    >
+                                        Update
+                                    </button>
+                                    <button
+                                        onClick={() => setEditingIssue(null)}
+                                        className="flex-1 px-6 py-3 bg-white/10 border border-white/30 text-white rounded-lg font-semibold hover:bg-white/20 transition-all"
+                                    >
+                                        Cancel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
