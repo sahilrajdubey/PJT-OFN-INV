@@ -25,6 +25,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
 Run this SQL in Supabase SQL Editor:
 
 ```sql
+-- Drop existing table if you want to update schema (WARNING: This deletes all data)
+DROP TABLE IF EXISTS computer_issues CASCADE;
+DROP TABLE IF EXISTS computer_submissions CASCADE;
+
 CREATE TABLE computer_submissions (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   unique_id VARCHAR(255) NOT NULL UNIQUE,
@@ -57,12 +61,10 @@ CREATE POLICY "Allow all operations" ON computer_submissions
 
 **Important Notes:**
 - **Unique ID Format**: `OFN/ITC/INV/{TYPE}-{NUMBER}`
-  - Examples: `OFN/ITC/INV/PC-001`, `OFN/ITC/INV/CPU-025`, `OFN/ITC/INV/Printer-100`
+  - Examples: `OFN/ITC/INV/PC-001`, `OFN/ITC/INV/Laptop-025`, `OFN/ITC/INV/Monitor-100`
   - Numbers auto-increment per inventory type (001, 002, 003... 999, 1000...)
-- **Inventory Types**: PC, CPU, Printer, UPS
-- **Computer Type Field**: Only applicable for PC inventory type (desktop, laptop, workstation, server)
-  - **Note**: Laptops are selected as "laptop" in Computer Type when Inventory Type is "PC"
-- **Section Field**: Removed from submissions (now only in issues)
+- **Inventory Types**: PC, Laptop, CPU, UPS, Mouse, Keyboard, Webcam, Monitor, Switch, MediaConverter
+- **Computer Type Field**: Removed (no longer used)
 
 ### Table 2: computer_issues
 Run this SQL in Supabase SQL Editor:
@@ -70,12 +72,16 @@ Run this SQL in Supabase SQL Editor:
 ```sql
 CREATE TABLE computer_issues (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  uid VARCHAR(255) NOT NULL UNIQUE,
   inventory_id UUID NOT NULL,
   unique_id VARCHAR(255) NOT NULL,
   serial_number VARCHAR(255) NOT NULL,
+  issue_type VARCHAR(20) NOT NULL CHECK (issue_type IN ('section', 'employee')),
   employee_section VARCHAR(255) NOT NULL,
-  location VARCHAR(255) NOT NULL,
-  issued_to VARCHAR(255) NOT NULL,
+  issued_to VARCHAR(255),
+  phone_number VARCHAR(50),
+  email VARCHAR(255),
+  designation VARCHAR(255),
   issue_date DATE NOT NULL,
   remarks TEXT,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -86,6 +92,7 @@ CREATE TABLE computer_issues (
 -- Create indexes for better query performance
 CREATE INDEX idx_computer_issues_inventory_id ON computer_issues(inventory_id);
 CREATE INDEX idx_computer_issues_unique_id ON computer_issues(unique_id);
+CREATE INDEX idx_computer_issues_uid ON computer_issues(uid);
 
 -- Enable Row Level Security
 ALTER TABLE computer_issues ENABLE ROW LEVEL SECURITY;
@@ -106,9 +113,9 @@ npm run dev
 ### computer_submissions
 - `id`: UUID (Primary Key)
 - `unique_id`: String (Unique, Auto-generated format: OFN/ITC/INV/{TYPE}-{NUMBER})
-- `inventory_type`: String (PC, CPU, Printer, UPS)
+- `inventory_type`: String (PC, Laptop, CPU, UPS, Mouse, Keyboard, Webcam, Monitor, Switch, MediaConverter)
 - `serial_number`: String
-- `computer_type`: String (nullable - only for PC: desktop, laptop, workstation, server)
+- `computer_type`: String (nullable - deprecated, no longer used)
 - `brand`: String
 - `model`: String
 - `processor`: String
@@ -121,19 +128,28 @@ npm run dev
 - `updated_at`: Timestamp
 
 **Field Notes:**
-- `computer_type` is only populated when `inventory_type` is "PC"
-- For laptops: Use `inventory_type` = "PC" and `computer_type` = "laptop"
-- `section` field removed (now only tracked in computer_issues table)
+- Each inventory type has its own unique ID sequence
+- `computer_type` field is deprecated and always null
 
 ### computer_issues
 - `id`: UUID (Primary Key)
+- `uid`: String (Unique, Auto-generated format: UID-{NUMBER}, increments globally across all issues)
 - `inventory_id`: UUID (Foreign Key to computer_submissions)
 - `unique_id`: String (Copied from computer_submissions for quick reference)
 - `serial_number`: String
-- `employee_section`: String (Security Section, IT Department, HR Department, etc.)
-- `location`: String (ITC Building, Security Office, Admin Block, etc.)
-- `issued_to`: String (employee name)
+- `issue_type`: String ('section' or 'employee')
+- `employee_section`: String (Section name: ITC, HR, Security, Finance, Operations, Administration, Engineering, Marketing)
+- `issued_to`: String (nullable - employee name, only for issue_type='employee')
+- `phone_number`: String (nullable - only for issue_type='employee')
+- `email`: String (nullable - only for issue_type='employee')
+- `designation`: String (nullable - only for issue_type='employee')
 - `issue_date`: Date
 - `remarks`: Text
 - `created_at`: Timestamp
 - `updated_at`: Timestamp
+
+**Field Notes:**
+- `uid` is a unique identifier for each issue record, independent of inventory type
+- When `issue_type` is 'section', only `employee_section` is required
+- When `issue_type` is 'employee', all employee fields (issued_to, phone_number, email, designation) are populated
+- `location` field removed (no longer tracked)

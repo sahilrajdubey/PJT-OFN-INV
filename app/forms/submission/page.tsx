@@ -26,7 +26,7 @@ export default function ComputerSubmissionPage() {
         remarks: ''
     });
 
-    const inventoryTypes = ['PC', 'CPU', 'Printer', 'UPS'];
+    const inventoryTypes = ['PC', 'Laptop', 'CPU', 'UPS', 'Mouse', 'Keyboard', 'Webcam', 'Monitor', 'Switch', 'MediaConverter'];
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({
@@ -87,7 +87,7 @@ export default function ComputerSubmissionPage() {
                         unique_id: uniqueId,
                         inventory_type: formData.inventoryType,
                         serial_number: formData.serialNumber,
-                        computer_type: formData.inventoryType === 'PC' ? formData.computerType : null,
+                        computer_type: null,
                         brand: formData.brand,
                         model: formData.model,
                         processor: formData.processor,
@@ -158,24 +158,7 @@ export default function ComputerSubmissionPage() {
                             />
                         </div>
 
-                        {/* Computer Type - Only for PC */}
-                        {formData.inventoryType === 'PC' && (
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-white/80 ml-1">Computer Type *</label>
-                                <select
-                                    name="computerType"
-                                    value={formData.computerType}
-                                    onChange={handleChange}
-                                    required
-                                    className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
-                                >
-                                    <option value="desktop">Desktop</option>
-                                    <option value="laptop">Laptop</option>
-                                    <option value="workstation">Workstation</option>
-                                    <option value="server">Server</option>
-                                </select>
-                            </div>
-                        )}
+
 
                         {/* Brand */}
                         <div className="space-y-2">

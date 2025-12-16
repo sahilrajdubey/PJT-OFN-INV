@@ -24,8 +24,8 @@ export default function ComputerIssuePage() {
     const [inventoryItems, setInventoryItems] = useState<InventoryItem[]>([]);
     const [showInventoryDrawer, setShowInventoryDrawer] = useState(false);
     const [showSectionDrawer, setShowSectionDrawer] = useState(false);
-    const [showLocationDrawer, setShowLocationDrawer] = useState(false);
     const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null);
+    const [issueType, setIssueType] = useState<'section' | 'employee'>('employee');
     
     const [formData, setFormData] = useState({
         inventoryId: '',
@@ -34,29 +34,22 @@ export default function ComputerIssuePage() {
         employeeSection: '',
         location: '',
         issuedTo: '',
+        phoneNumber: '',
+        email: '',
+        designation: '',
         issueDate: '',
         remarks: ''
     });
 
     const sections = [
-        'Security Section',
-        'IT Department',
-        'HR Department',
-        'Finance Department',
+        'ITC',
+        'HR',
+        'Security',
+        'Finance',
         'Operations',
         'Administration',
         'Engineering',
         'Marketing'
-    ];
-
-    const locations = [
-        'ITC Building',
-        'Security Office',
-        'Admin Block',
-        'Main Building',
-        'Warehouse',
-        'Guest House',
-        'Training Center'
     ];
 
     useEffect(() => {
@@ -108,11 +101,6 @@ export default function ComputerIssuePage() {
         setShowSectionDrawer(false);
     };
 
-    const handleLocationSelect = (location: string) => {
-        setFormData({ ...formData, location });
-        setShowLocationDrawer(false);
-    };
-
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData({
             ...formData,
@@ -120,21 +108,53 @@ export default function ComputerIssuePage() {
         });
     };
 
+    const generateUID = async (): Promise<string> => {
+        try {
+            const { data, error } = await supabase
+                .from('computer_issues')
+                .select('uid')
+                .order('created_at', { ascending: false })
+                .limit(1);
+
+            if (error) throw error;
+
+            let nextNumber = 1;
+            if (data && data.length > 0 && data[0].uid) {
+                const match = data[0].uid.match(/UID-(\d+)$/);
+                if (match) {
+                    nextNumber = parseInt(match[1]) + 1;
+                }
+            }
+
+            const formattedNumber = nextNumber.toString().padStart(3, '0');
+            return `UID-${formattedNumber}`;
+        } catch (error) {
+            console.error('Error generating UID:', error);
+            return `UID-${Date.now()}`;
+        }
+    };
+
     const handleSubmit = async (e: FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
         
         try {
+            const uid = await generateUID();
+            
             const { data, error } = await supabase
                 .from('computer_issues')
                 .insert([
                     {
+                        uid: uid,
                         inventory_id: formData.inventoryId,
                         unique_id: formData.uniqueId,
                         serial_number: formData.serialNumber,
+                        issue_type: issueType,
                         employee_section: formData.employeeSection,
-                        location: formData.location,
-                        issued_to: formData.issuedTo,
+                        issued_to: issueType === 'employee' ? formData.issuedTo : null,
+                        phone_number: issueType === 'employee' ? formData.phoneNumber : null,
+                        email: issueType === 'employee' ? formData.email : null,
+                        designation: issueType === 'employee' ? formData.designation : null,
                         issue_date: formData.issueDate,
                         remarks: formData.remarks
                     }
@@ -143,10 +163,10 @@ export default function ComputerIssuePage() {
             if (error) throw error;
 
             const queryParams = new URLSearchParams({
+                uid: uid,
                 id: formData.uniqueId,
-                to: formData.issuedTo,
-                section: formData.employeeSection,
-                location: formData.location
+                to: issueType === 'employee' ? formData.issuedTo : formData.employeeSection,
+                section: formData.employeeSection
             });
 
             router.push(`/success/issue?${queryParams.toString()}`);
@@ -200,9 +220,38 @@ export default function ComputerIssuePage() {
                         </button>
                     </div>
 
-                    {/* Select Employee/Section */}
+                    {/* Issue Type Selection */}
                     <div className="space-y-2 mb-6">
-                        <label className="text-sm font-medium text-white/80 ml-1">Employee Section *</label>
+                        <label className="text-sm font-medium text-white/80 ml-1">Issue To *</label>
+                        <div className="grid grid-cols-2 gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setIssueType('section')}
+                                className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                                    issueType === 'section'
+                                        ? 'bg-orange-500/30 text-orange-200 border-2 border-orange-500/70'
+                                        : 'bg-white/10 text-white/60 border border-white/30 hover:bg-white/15'
+                                }`}
+                            >
+                                Section
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setIssueType('employee')}
+                                className={`px-4 py-3 rounded-xl font-medium transition-all ${
+                                    issueType === 'employee'
+                                        ? 'bg-orange-500/30 text-orange-200 border-2 border-orange-500/70'
+                                        : 'bg-white/10 text-white/60 border border-white/30 hover:bg-white/15'
+                                }`}
+                            >
+                                Employee
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Select Section */}
+                    <div className="space-y-2 mb-6">
+                        <label className="text-sm font-medium text-white/80 ml-1">Section Name *</label>
                         <button
                             type="button"
                             onClick={() => setShowSectionDrawer(true)}
@@ -212,31 +261,62 @@ export default function ComputerIssuePage() {
                         </button>
                     </div>
 
-                    {/* Select Location */}
-                    <div className="space-y-2 mb-6">
-                        <label className="text-sm font-medium text-white/80 ml-1">Location *</label>
-                        <button
-                            type="button"
-                            onClick={() => setShowLocationDrawer(true)}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white text-left focus:outline-none focus:border-orange-400/70 focus:ring-2 focus:ring-orange-400/30 transition-all hover:bg-white/15"
-                        >
-                            {formData.location || <span className="text-white/50">Click to select location</span>}
-                        </button>
-                    </div>
+                    {/* Employee Details - Only shown when issueType is 'employee' */}
+                    {issueType === 'employee' && (
+                        <>
+                            <div className="space-y-2 mb-6">
+                                <label className="text-sm font-medium text-white/80 ml-1">Employee Name *</label>
+                                <input
+                                    type="text"
+                                    name="issuedTo"
+                                    value={formData.issuedTo}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-orange-400/70 focus:ring-2 focus:ring-orange-400/30 transition-all"
+                                    placeholder="Enter employee name"
+                                />
+                            </div>
 
-                    {/* Issued To */}
-                    <div className="space-y-2 mb-6">
-                        <label className="text-sm font-medium text-white/80 ml-1">Issued To (Employee Name) *</label>
-                        <input
-                            type="text"
-                            name="issuedTo"
-                            value={formData.issuedTo}
-                            onChange={handleChange}
-                            required
-                            className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-orange-400/70 focus:ring-2 focus:ring-orange-400/30 transition-all"
-                            placeholder="Enter employee name"
-                        />
-                    </div>
+                            <div className="space-y-2 mb-6">
+                                <label className="text-sm font-medium text-white/80 ml-1">Phone Number *</label>
+                                <input
+                                    type="tel"
+                                    name="phoneNumber"
+                                    value={formData.phoneNumber}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-orange-400/70 focus:ring-2 focus:ring-orange-400/30 transition-all"
+                                    placeholder="Enter phone number"
+                                />
+                            </div>
+
+                            <div className="space-y-2 mb-6">
+                                <label className="text-sm font-medium text-white/80 ml-1">Email *</label>
+                                <input
+                                    type="email"
+                                    name="email"
+                                    value={formData.email}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-orange-400/70 focus:ring-2 focus:ring-orange-400/30 transition-all"
+                                    placeholder="Enter email address"
+                                />
+                            </div>
+
+                            <div className="space-y-2 mb-6">
+                                <label className="text-sm font-medium text-white/80 ml-1">Designation *</label>
+                                <input
+                                    type="text"
+                                    name="designation"
+                                    value={formData.designation}
+                                    onChange={handleChange}
+                                    required
+                                    className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-orange-400/70 focus:ring-2 focus:ring-orange-400/30 transition-all"
+                                    placeholder="Enter designation"
+                                />
+                            </div>
+                        </>
+                    )}
 
                     {/* Issue Date */}
                     <div className="space-y-2 mb-6">
@@ -267,14 +347,14 @@ export default function ComputerIssuePage() {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        disabled={isLoading || !formData.inventoryId || !formData.employeeSection || !formData.location}
+                        disabled={isLoading || !formData.inventoryId || !formData.employeeSection}
                         className="w-full py-4 rounded-xl font-bold text-white text-lg tracking-wide transition-all duration-300 relative overflow-hidden group hover:shadow-lg hover:shadow-orange-500/50 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
                         style={{
                             background: 'linear-gradient(90deg, #f97316 0%, #ea580c 100%)',
                         }}
                     >
                         <span className="relative z-10">
-                            {isLoading ? 'Issuing...' : 'Issue Computer'}
+                            {isLoading ? 'Issuing...' : 'Issue Equipment'}
                         </span>
                     </button>
                 </form>
@@ -333,7 +413,7 @@ export default function ComputerIssuePage() {
                     <div className="relative bg-black/90 backdrop-blur-xl border border-white/40 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
                         <div className="p-6 border-b border-white/20">
                             <h2 className="text-2xl font-bold text-white">Select Section</h2>
-                            <p className="text-white/60 text-sm mt-1">Choose employee section</p>
+                            <p className="text-white/60 text-sm mt-1">Choose section</p>
                         </div>
                         <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-6">
                             <div className="grid grid-cols-2 gap-3">
@@ -344,32 +424,6 @@ export default function ComputerIssuePage() {
                                         className="p-4 bg-white/10 hover:bg-white/20 border border-white/30 rounded-xl text-white font-medium transition-all"
                                     >
                                         {section}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Location Drawer */}
-            {showLocationDrawer && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowLocationDrawer(false)}>
-                    <div className="absolute inset-0 bg-black/70 backdrop-blur-sm"></div>
-                    <div className="relative bg-black/90 backdrop-blur-xl border border-white/40 rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                        <div className="p-6 border-b border-white/20">
-                            <h2 className="text-2xl font-bold text-white">Select Location</h2>
-                            <p className="text-white/60 text-sm mt-1">Choose building/location</p>
-                        </div>
-                        <div className="overflow-y-auto max-h-[calc(80vh-120px)] p-6">
-                            <div className="grid grid-cols-2 gap-3">
-                                {locations.map((location) => (
-                                    <button
-                                        key={location}
-                                        onClick={() => handleLocationSelect(location)}
-                                        className="p-4 bg-white/10 hover:bg-white/20 border border-white/30 rounded-xl text-white font-medium transition-all"
-                                    >
-                                        {location}
                                     </button>
                                 ))}
                             </div>

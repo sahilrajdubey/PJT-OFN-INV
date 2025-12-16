@@ -26,7 +26,6 @@ interface ComputerSubmission {
     issue_details?: {
         issued_to: string;
         employee_section: string;
-        location: string;
         issue_date: string;
     };
 }
@@ -37,7 +36,7 @@ export default function ViewSubmissionsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'available' | 'issued'>('all');
-    const [filterInventoryType, setFilterInventoryType] = useState<'all' | 'PC' | 'CPU' | 'Printer' | 'UPS'>('all');
+    const [filterInventoryType, setFilterInventoryType] = useState<'all' | 'PC' | 'Laptop' | 'CPU' | 'UPS' | 'Mouse' | 'Keyboard' | 'Webcam' | 'Monitor' | 'Switch' | 'MediaConverter'>('all');
     const [editingSubmission, setEditingSubmission] = useState<ComputerSubmission | null>(null);
     const [editFormData, setEditFormData] = useState<Partial<ComputerSubmission>>({});
 
@@ -58,7 +57,7 @@ export default function ViewSubmissionsPage() {
             // Fetch all issues with details
             const { data: issuesData, error: issueError } = await supabase
                 .from('computer_issues')
-                .select('inventory_id, issued_to, employee_section, location, issue_date');
+                .select('inventory_id, issued_to, employee_section, issue_date');
 
             if (issueError) throw issueError;
 
@@ -69,7 +68,6 @@ export default function ViewSubmissionsPage() {
                     {
                         issued_to: issue.issued_to,
                         employee_section: issue.employee_section,
-                        location: issue.location,
                         issue_date: issue.issue_date
                     }
                 ]) || []
@@ -100,6 +98,92 @@ export default function ViewSubmissionsPage() {
         
         return true;
     });
+
+    const handlePrint = async (submission: ComputerSubmission) => {
+        try {
+            const jsPDF = (await import('jspdf')).default;
+            const doc = new jsPDF();
+
+            // Header
+            doc.setFontSize(20);
+            doc.text('Equipment Inventory Record', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 28, { align: 'center' });
+
+            // Inventory ID Box
+            doc.setFontSize(16);
+            doc.setTextColor(0);
+            doc.setDrawColor(59, 130, 246);
+            doc.setLineWidth(1);
+            doc.rect(15, 35, 180, 15);
+            doc.text(`Inventory ID: ${submission.unique_id}`, 105, 45, { align: 'center' });
+
+            let yPos = 60;
+
+            // Equipment Details
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text('Equipment Details', 15, yPos);
+            yPos += 8;
+
+            doc.setFontSize(10);
+            doc.text(`Inventory Type: ${submission.inventory_type}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Serial Number: ${submission.serial_number}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Brand: ${submission.brand}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Model: ${submission.model}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Processor: ${submission.processor}`, 20, yPos);
+            yPos += 6;
+            doc.text(`RAM: ${submission.ram}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Storage: ${submission.storage}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Operating System: ${submission.operating_system}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Purchase Date: ${new Date(submission.purchase_date).toLocaleDateString()}`, 20, yPos);
+            yPos += 10;
+
+            if (submission.remarks) {
+                doc.text(`Remarks: ${submission.remarks}`, 20, yPos);
+                yPos += 10;
+            }
+
+            // Status
+            doc.setFontSize(14);
+            doc.text('Status', 15, yPos);
+            yPos += 8;
+
+            doc.setFontSize(10);
+            doc.text(`Status: ${submission.is_issued ? 'Issued' : 'Available'}`, 20, yPos);
+            yPos += 6;
+
+            if (submission.is_issued && submission.issue_details) {
+                doc.text(`Issued To: ${submission.issue_details.issued_to || submission.issue_details.employee_section}`, 20, yPos);
+                yPos += 6;
+                doc.text(`Section: ${submission.issue_details.employee_section}`, 20, yPos);
+                yPos += 6;
+                doc.text(`Issue Date: ${new Date(submission.issue_details.issue_date).toLocaleDateString()}`, 20, yPos);
+                yPos += 6;
+            }
+
+            yPos += 10;
+            doc.text(`Created: ${new Date(submission.created_at).toLocaleString()}`, 20, yPos);
+
+            // Footer
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('© OFN Inventory Management System', 105, 280, { align: 'center' });
+
+            doc.save(`Inventory-${submission.unique_id}.pdf`);
+        } catch (error: any) {
+            alert('Error printing: ' + error.message);
+        }
+    };
 
     const handleDelete = async (id: string, uniqueId: string) => {
         if (!confirm(`Are you sure you want to delete inventory ${uniqueId}?\nThis action cannot be undone.`)) {
@@ -193,17 +277,15 @@ export default function ViewSubmissionsPage() {
                 submission.unique_id,
                 submission.inventory_type,
                 submission.serial_number,
-                submission.computer_type || '-',
                 submission.brand,
                 submission.model,
-                submission.issue_details?.issued_to || '-',
-                submission.issue_details?.location || '-',
+                submission.issue_details?.issued_to || submission.issue_details?.employee_section || '-',
                 new Date(submission.purchase_date).toLocaleDateString()
             ]);
 
             // Add table
             autoTable(doc, {
-                head: [['Status', 'Unique ID', 'Type', 'Serial', 'PC Type', 'Brand', 'Model', 'Issued To', 'Location', 'Purchase Date']],
+                head: [['Status', 'Unique ID', 'Type', 'Serial', 'Brand', 'Model', 'Issued To', 'Purchase Date']],
                 body: tableData,
                 startY: 37,
                 styles: { fontSize: 8 },
@@ -287,7 +369,7 @@ export default function ViewSubmissionsPage() {
                 </div>
 
                 {/* Inventory Type Filter Tabs */}
-                <div className="mb-6 flex justify-center overflow-x-auto">
+                <div className="mb-6 overflow-x-auto">
                     <div className="inline-flex gap-2 backdrop-blur-[50px] bg-white/5 border border-white/30 rounded-xl p-2 min-w-max">
                         <button
                             onClick={() => setFilterInventoryType('all')}
@@ -299,46 +381,19 @@ export default function ViewSubmissionsPage() {
                         >
                             All Types
                         </button>
-                        <button
-                            onClick={() => setFilterInventoryType('PC')}
-                            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
-                                filterInventoryType === 'PC'
-                                    ? 'bg-blue-500/30 text-blue-200 border border-blue-500/50'
-                                    : 'text-white/60 hover:text-white hover:bg-white/10'
-                            }`}
-                        >
-                            PC ({submissions.filter(s => s.inventory_type === 'PC').length})
-                        </button>
-                        <button
-                            onClick={() => setFilterInventoryType('CPU')}
-                            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
-                                filterInventoryType === 'CPU'
-                                    ? 'bg-purple-500/30 text-purple-200 border border-purple-500/50'
-                                    : 'text-white/60 hover:text-white hover:bg-white/10'
-                            }`}
-                        >
-                            CPU ({submissions.filter(s => s.inventory_type === 'CPU').length})
-                        </button>
-                        <button
-                            onClick={() => setFilterInventoryType('Printer')}
-                            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
-                                filterInventoryType === 'Printer'
-                                    ? 'bg-green-500/30 text-green-200 border border-green-500/50'
-                                    : 'text-white/60 hover:text-white hover:bg-white/10'
-                            }`}
-                        >
-                            Printer ({submissions.filter(s => s.inventory_type === 'Printer').length})
-                        </button>
-                        <button
-                            onClick={() => setFilterInventoryType('UPS')}
-                            className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
-                                filterInventoryType === 'UPS'
-                                    ? 'bg-yellow-500/30 text-yellow-200 border border-yellow-500/50'
-                                    : 'text-white/60 hover:text-white hover:bg-white/10'
-                            }`}
-                        >
-                            UPS ({submissions.filter(s => s.inventory_type === 'UPS').length})
-                        </button>
+                        {['PC', 'Laptop', 'CPU', 'UPS', 'Mouse', 'Keyboard', 'Webcam', 'Monitor', 'Switch', 'MediaConverter'].map((type) => (
+                            <button
+                                key={type}
+                                onClick={() => setFilterInventoryType(type as any)}
+                                className={`px-3 md:px-4 py-2 rounded-lg text-xs md:text-sm font-medium transition-all whitespace-nowrap ${
+                                    filterInventoryType === type
+                                        ? 'bg-blue-500/30 text-blue-200 border border-blue-500/50'
+                                        : 'text-white/60 hover:text-white hover:bg-white/10'
+                                }`}
+                            >
+                                {type} ({submissions.filter(s => s.inventory_type === type).length})
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -369,11 +424,9 @@ export default function ViewSubmissionsPage() {
                                     <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Unique ID</th>
                                     <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Inventory Type</th>
                                     <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Serial Number</th>
-                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">PC Type</th>
                                     <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Brand</th>
                                     <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Model</th>
                                     <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Issued To</th>
-                                    <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Location</th>
                                     <th className="text-left py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Purchase Date</th>
                                     <th className="text-center py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm font-semibold whitespace-nowrap">Actions</th>
                                 </tr>
@@ -404,28 +457,23 @@ export default function ViewSubmissionsPage() {
                                             </span>
                                         </td>
                                         <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">{submission.serial_number}</td>
-                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">
-                                            {submission.computer_type ? (
-                                                <span className="capitalize">{submission.computer_type}</span>
-                                            ) : (
-                                                <span className="text-white/40">-</span>
-                                            )}
-                                        </td>
                                         <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">{submission.brand}</td>
                                         <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">{submission.model}</td>
                                         <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">
-                                            {submission.issue_details?.issued_to || (
-                                                <span className="text-white/40">-</span>
-                                            )}
-                                        </td>
-                                        <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">
-                                            {submission.issue_details?.location || (
+                                            {submission.issue_details?.issued_to || submission.issue_details?.employee_section || (
                                                 <span className="text-white/40">-</span>
                                             )}
                                         </td>
                                         <td className="py-2 md:py-3 px-2 md:px-4 text-xs md:text-sm">{new Date(submission.purchase_date).toLocaleDateString()}</td>
                                         <td className="py-3 px-4 text-center">
                                             <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => handlePrint(submission)}
+                                                    className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-200 text-xs rounded-lg transition-all"
+                                                    title="Print inventory"
+                                                >
+                                                    Print
+                                                </button>
                                                 <button
                                                     onClick={() => handleEdit(submission)}
                                                     className="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 text-blue-200 text-xs rounded-lg transition-all"

@@ -10,12 +10,16 @@ export const dynamic = 'force-dynamic';
 
 interface ComputerIssue {
     id: string;
+    uid: string;
     inventory_id: string;
     unique_id: string;
     serial_number: string;
+    issue_type: 'section' | 'employee';
     employee_section: string;
-    location: string;
-    issued_to: string;
+    issued_to: string | null;
+    phone_number: string | null;
+    email: string | null;
+    designation: string | null;
     issue_date: string;
     remarks: string;
     created_at: string;
@@ -74,7 +78,9 @@ export default function ViewIssuesPage() {
         setEditFormData({
             issued_to: issue.issued_to,
             employee_section: issue.employee_section,
-            location: issue.location,
+            phone_number: issue.phone_number,
+            email: issue.email,
+            designation: issue.designation,
             issue_date: issue.issue_date,
             remarks: issue.remarks
         });
@@ -100,6 +106,114 @@ export default function ViewIssuesPage() {
         }
     };
 
+    const handlePrint = async (issue: ComputerIssue) => {
+        try {
+            // Fetch full inventory details
+            const { data: inventoryData, error } = await supabase
+                .from('computer_submissions')
+                .select('*')
+                .eq('id', issue.inventory_id)
+                .single();
+
+            if (error) throw error;
+
+            const jsPDF = (await import('jspdf')).default;
+            const doc = new jsPDF();
+
+            // Header
+            doc.setFontSize(20);
+            doc.text('Equipment Issue Record', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 28, { align: 'center' });
+
+            // UID Box
+            doc.setFontSize(16);
+            doc.setTextColor(0);
+            doc.setDrawColor(255, 127, 0);
+            doc.setLineWidth(1);
+            doc.rect(15, 35, 180, 15);
+            doc.text(`UID: ${issue.uid}`, 105, 45, { align: 'center' });
+
+            let yPos = 60;
+
+            // Equipment Details
+            doc.setFontSize(14);
+            doc.setTextColor(0);
+            doc.text('Equipment Details', 15, yPos);
+            yPos += 8;
+
+            doc.setFontSize(10);
+            doc.text(`Inventory ID: ${issue.unique_id}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Serial Number: ${issue.serial_number}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Brand: ${inventoryData.brand}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Model: ${inventoryData.model}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Inventory Type: ${inventoryData.inventory_type}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Processor: ${inventoryData.processor}`, 20, yPos);
+            yPos += 6;
+            doc.text(`RAM: ${inventoryData.ram}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Storage: ${inventoryData.storage}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Operating System: ${inventoryData.operating_system}`, 20, yPos);
+            yPos += 10;
+
+            // Issue Details
+            doc.setFontSize(14);
+            doc.text('Issue Details', 15, yPos);
+            yPos += 8;
+
+            doc.setFontSize(10);
+            doc.text(`Issue Type: ${issue.issue_type === 'employee' ? 'Employee' : 'Section'}`, 20, yPos);
+            yPos += 6;
+            doc.text(`Section: ${issue.employee_section}`, 20, yPos);
+            yPos += 6;
+
+            if (issue.issue_type === 'employee' && issue.issued_to) {
+                doc.text(`Issued To: ${issue.issued_to}`, 20, yPos);
+                yPos += 6;
+                if (issue.phone_number) {
+                    doc.text(`Phone: ${issue.phone_number}`, 20, yPos);
+                    yPos += 6;
+                }
+                if (issue.email) {
+                    doc.text(`Email: ${issue.email}`, 20, yPos);
+                    yPos += 6;
+                }
+                if (issue.designation) {
+                    doc.text(`Designation: ${issue.designation}`, 20, yPos);
+                    yPos += 6;
+                }
+            }
+
+            doc.text(`Issue Date: ${new Date(issue.issue_date).toLocaleDateString()}`, 20, yPos);
+            yPos += 6;
+
+            if (issue.remarks) {
+                doc.text(`Remarks: ${issue.remarks}`, 20, yPos);
+                yPos += 6;
+            }
+
+            yPos += 10;
+            doc.text(`Created: ${new Date(issue.created_at).toLocaleString()}`, 20, yPos);
+
+            // Footer
+            doc.setFontSize(8);
+            doc.setTextColor(150);
+            doc.text('© OFN Inventory Management System', 105, 280, { align: 'center' });
+
+            doc.save(`Issue-${issue.uid}-${issue.unique_id}.pdf`);
+        } catch (error: any) {
+            alert('Error printing: ' + error.message);
+        }
+    };
+
     const exportToPDF = async () => {
         try {
             const jsPDF = (await import('jspdf')).default;
@@ -115,17 +229,17 @@ export default function ViewIssuesPage() {
             doc.text(`Total Records: ${issues.length}`, 14, 27);
 
             const tableData = issues.map(issue => [
+                issue.uid,
                 issue.unique_id,
                 issue.serial_number,
-                issue.issued_to,
+                issue.issue_type === 'employee' ? issue.issued_to || '-' : issue.employee_section,
                 issue.employee_section,
-                issue.location,
                 new Date(issue.issue_date).toLocaleDateString(),
                 issue.remarks || '-'
             ]);
 
             autoTable(doc, {
-                head: [['Unique ID', 'Serial Number', 'Issued To', 'Section', 'Location', 'Issue Date', 'Remarks']],
+                head: [['UID', 'Unique ID', 'Serial Number', 'Issued To', 'Section', 'Issue Date', 'Remarks']],
                 body: tableData,
                 startY: 32,
                 styles: { fontSize: 9 },
@@ -194,13 +308,13 @@ export default function ViewIssuesPage() {
                         <table className="w-full text-white">
                             <thead>
                                 <tr className="border-b border-white/30">
+                                    <th className="text-left py-3 px-4 text-sm font-semibold">UID</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold">Unique ID</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold">Serial Number</th>
+                                    <th className="text-left py-3 px-4 text-sm font-semibold">Issue Type</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold">Issued To</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold">Section</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Location</th>
                                     <th className="text-left py-3 px-4 text-sm font-semibold">Issue Date</th>
-                                    <th className="text-left py-3 px-4 text-sm font-semibold">Remarks</th>
                                     <th className="text-center py-3 px-4 text-sm font-semibold">Actions</th>
                                 </tr>
                             </thead>
@@ -212,15 +326,32 @@ export default function ViewIssuesPage() {
                                             index % 2 === 0 ? 'bg-white/5' : ''
                                         }`}
                                     >
+                                        <td className="py-3 px-4 text-sm font-semibold text-cyan-300">{issue.uid}</td>
                                         <td className="py-3 px-4 text-sm font-semibold text-orange-300">{issue.unique_id}</td>
                                         <td className="py-3 px-4 text-sm">{issue.serial_number}</td>
-                                        <td className="py-3 px-4 text-sm">{issue.issued_to}</td>
+                                        <td className="py-3 px-4 text-sm">
+                                            <span className={`px-2 py-1 text-xs rounded-full ${
+                                                issue.issue_type === 'employee' 
+                                                    ? 'bg-blue-500/20 text-blue-200' 
+                                                    : 'bg-purple-500/20 text-purple-200'
+                                            }`}>
+                                                {issue.issue_type === 'employee' ? 'Employee' : 'Section'}
+                                            </span>
+                                        </td>
+                                        <td className="py-3 px-4 text-sm">
+                                            {issue.issue_type === 'employee' ? issue.issued_to : issue.employee_section}
+                                        </td>
                                         <td className="py-3 px-4 text-sm">{issue.employee_section}</td>
-                                        <td className="py-3 px-4 text-sm">{issue.location}</td>
                                         <td className="py-3 px-4 text-sm">{new Date(issue.issue_date).toLocaleDateString()}</td>
-                                        <td className="py-3 px-4 text-sm max-w-xs truncate" title={issue.remarks}>{issue.remarks || '-'}</td>
                                         <td className="py-3 px-4 text-center">
                                             <div className="flex gap-2 justify-center">
+                                                <button
+                                                    onClick={() => handlePrint(issue)}
+                                                    className="px-3 py-1 bg-green-500/20 hover:bg-green-500/30 border border-green-500/50 text-green-200 text-xs rounded-lg transition-all"
+                                                    title="Print issue record"
+                                                >
+                                                    Print
+                                                </button>
                                                 <button
                                                     onClick={() => handleEdit(issue)}
                                                     className="px-3 py-1 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/50 text-blue-200 text-xs rounded-lg transition-all"
@@ -262,6 +393,16 @@ export default function ViewIssuesPage() {
 
                             <div className="space-y-4">
                                 <div>
+                                    <label className="block text-white/80 text-sm mb-2">UID (Read-only)</label>
+                                    <input
+                                        type="text"
+                                        value={editingIssue.uid}
+                                        disabled
+                                        className="w-full px-4 py-2 bg-white/5 border border-white/30 rounded-lg text-white/50 cursor-not-allowed"
+                                    />
+                                </div>
+
+                                <div>
                                     <label className="block text-white/80 text-sm mb-2">Unique ID (Read-only)</label>
                                     <input
                                         type="text"
@@ -272,47 +413,58 @@ export default function ViewIssuesPage() {
                                 </div>
 
                                 <div>
-                                    <label className="block text-white/80 text-sm mb-2">Issued To</label>
+                                    <label className="block text-white/80 text-sm mb-2">Employee Section</label>
                                     <input
                                         type="text"
-                                        value={editFormData.issued_to || ''}
-                                        onChange={(e) => setEditFormData({...editFormData, issued_to: e.target.value})}
+                                        value={editFormData.employee_section || ''}
+                                        onChange={(e) => setEditFormData({...editFormData, employee_section: e.target.value})}
                                         className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="block text-white/80 text-sm mb-2">Employee Section</label>
-                                    <select
-                                        value={editFormData.employee_section || ''}
-                                        onChange={(e) => setEditFormData({...editFormData, employee_section: e.target.value})}
-                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
-                                    >
-                                        <option value="">Select section</option>
-                                        <option value="Security">Security</option>
-                                        <option value="Administration">Administration</option>
-                                        <option value="IT Department">IT Department</option>
-                                        <option value="Finance">Finance</option>
-                                        <option value="HR">HR</option>
-                                        <option value="Operations">Operations</option>
-                                    </select>
-                                </div>
+                                {editingIssue.issue_type === 'employee' && (
+                                    <>
+                                        <div>
+                                            <label className="block text-white/80 text-sm mb-2">Issued To</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.issued_to || ''}
+                                                onChange={(e) => setEditFormData({...editFormData, issued_to: e.target.value})}
+                                                className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                            />
+                                        </div>
 
-                                <div>
-                                    <label className="block text-white/80 text-sm mb-2">Location</label>
-                                    <select
-                                        value={editFormData.location || ''}
-                                        onChange={(e) => setEditFormData({...editFormData, location: e.target.value})}
-                                        className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
-                                    >
-                                        <option value="">Select location</option>
-                                        <option value="ITC">ITC</option>
-                                        <option value="Security">Security</option>
-                                        <option value="Admin">Admin</option>
-                                        <option value="Main Office">Main Office</option>
-                                        <option value="Branch Office">Branch Office</option>
-                                    </select>
-                                </div>
+                                        <div>
+                                            <label className="block text-white/80 text-sm mb-2">Phone Number</label>
+                                            <input
+                                                type="tel"
+                                                value={editFormData.phone_number || ''}
+                                                onChange={(e) => setEditFormData({...editFormData, phone_number: e.target.value})}
+                                                className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-white/80 text-sm mb-2">Email</label>
+                                            <input
+                                                type="email"
+                                                value={editFormData.email || ''}
+                                                onChange={(e) => setEditFormData({...editFormData, email: e.target.value})}
+                                                className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-white/80 text-sm mb-2">Designation</label>
+                                            <input
+                                                type="text"
+                                                value={editFormData.designation || ''}
+                                                onChange={(e) => setEditFormData({...editFormData, designation: e.target.value})}
+                                                className="w-full px-4 py-2 bg-white/10 border border-white/30 rounded-lg text-white focus:border-cyan-400 focus:outline-none"
+                                            />
+                                        </div>
+                                    </>
+                                )}
 
                                 <div>
                                     <label className="block text-white/80 text-sm mb-2">Issue Date</label>
