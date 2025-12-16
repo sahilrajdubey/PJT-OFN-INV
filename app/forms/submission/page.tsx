@@ -90,10 +90,18 @@ export default function ComputerSubmissionPage() {
                         computer_type: null,
                         brand: formData.brand,
                         model: formData.model,
-                        processor: formData.processor,
-                        ram: formData.ram,
-                        storage: formData.storage,
-                        operating_system: formData.operatingSystem,
+                        processor: (formData.inventoryType === 'PC' || formData.inventoryType === 'Laptop' || formData.inventoryType === 'CPU') 
+                            ? formData.processor 
+                            : 'NA',
+                        ram: (formData.inventoryType === 'PC' || formData.inventoryType === 'Laptop' || formData.inventoryType === 'CPU') 
+                            ? formData.ram 
+                            : 'NA',
+                        storage: (formData.inventoryType === 'PC' || formData.inventoryType === 'Laptop' || formData.inventoryType === 'CPU') 
+                            ? formData.storage 
+                            : 'NA',
+                        operating_system: (formData.inventoryType === 'PC' || formData.inventoryType === 'Laptop' || formData.inventoryType === 'CPU') 
+                            ? formData.operatingSystem 
+                            : 'NA',
                         purchase_date: formData.purchaseDate,
                         remarks: formData.remarks
                     }
@@ -188,61 +196,66 @@ export default function ComputerSubmissionPage() {
                             />
                         </div>
 
-                        {/* Processor */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80 ml-1">Processor *</label>
-                            <input
-                                type="text"
-                                name="processor"
-                                value={formData.processor}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
-                                placeholder="e.g., Intel Core i7"
-                            />
-                        </div>
+                        {/* Show these fields only for PC, Laptop, CPU */}
+                        {(formData.inventoryType === 'PC' || formData.inventoryType === 'Laptop' || formData.inventoryType === 'CPU') && (
+                            <>
+                                {/* Processor */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-white/80 ml-1">Processor *</label>
+                                    <input
+                                        type="text"
+                                        name="processor"
+                                        value={formData.processor}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
+                                        placeholder="e.g., Intel Core i7"
+                                    />
+                                </div>
 
-                        {/* RAM */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80 ml-1">RAM *</label>
-                            <input
-                                type="text"
-                                name="ram"
-                                value={formData.ram}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
-                                placeholder="e.g., 16GB"
-                            />
-                        </div>
+                                {/* RAM */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-white/80 ml-1">RAM *</label>
+                                    <input
+                                        type="text"
+                                        name="ram"
+                                        value={formData.ram}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
+                                        placeholder="e.g., 16GB"
+                                    />
+                                </div>
 
-                        {/* Storage */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80 ml-1">Storage *</label>
-                            <input
-                                type="text"
-                                name="storage"
-                                value={formData.storage}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
-                                placeholder="e.g., 512GB SSD"
-                            />
-                        </div>
+                                {/* Storage */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-white/80 ml-1">Storage *</label>
+                                    <input
+                                        type="text"
+                                        name="storage"
+                                        value={formData.storage}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
+                                        placeholder="e.g., 512GB SSD"
+                                    />
+                                </div>
 
-                        {/* Operating System */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-white/80 ml-1">Operating System *</label>
-                            <input
-                                type="text"
-                                name="operatingSystem"
-                                value={formData.operatingSystem}
-                                onChange={handleChange}
-                                required
-                                className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
-                                placeholder="e.g., Windows 11 Pro"
-                            />
-                        </div>
+                                {/* Operating System */}
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium text-white/80 ml-1">Operating System *</label>
+                                    <input
+                                        type="text"
+                                        name="operatingSystem"
+                                        value={formData.operatingSystem}
+                                        onChange={handleChange}
+                                        required
+                                        className="w-full px-4 py-3 bg-white/10 border border-white/30 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-cyan-400/70 focus:ring-2 focus:ring-cyan-400/30 transition-all"
+                                        placeholder="e.g., Windows 11 Pro"
+                                    />
+                                </div>
+                            </>
+                        )}
 
                         {/* Purchase Date */}
                         <div className="space-y-2">
