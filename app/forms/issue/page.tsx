@@ -26,6 +26,16 @@ export default function ComputerIssuePage() {
     const [showSectionDrawer, setShowSectionDrawer] = useState(false);
     const [selectedInventory, setSelectedInventory] = useState<InventoryItem | null>(null);
     const [issueType, setIssueType] = useState<'section' | 'employee'>('employee');
+    const [sections, setSections] = useState<string[]>([
+        'ITC',
+        'HR',
+        'Security',
+        'Finance',
+        'Operations',
+        'Administration',
+        'Engineering',
+        'Marketing'
+    ]);
     
     const [formData, setFormData] = useState({
         inventoryId: '',
@@ -41,19 +51,14 @@ export default function ComputerIssuePage() {
         remarks: ''
     });
 
-    const sections = [
-        'ITC',
-        'HR',
-        'Security',
-        'Finance',
-        'Operations',
-        'Administration',
-        'Engineering',
-        'Marketing'
-    ];
-
     useEffect(() => {
         fetchInventory();
+        
+        // Load sections from localStorage
+        const savedSections = localStorage.getItem('sections');
+        if (savedSections) {
+            setSections(JSON.parse(savedSections));
+        }
     }, []);
 
     const fetchInventory = async () => {
