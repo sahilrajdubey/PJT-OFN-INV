@@ -28,7 +28,7 @@ export default function FormSelectionPage() {
                     Select the form you want to fill
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
                     {/* Computer Submission Form Card */}
                     <button
                         onClick={() => router.push('/forms/submission')}
@@ -61,6 +61,24 @@ export default function FormSelectionPage() {
                             <h2 className="text-2xl font-bold text-white">Issue Equipment</h2>
                             <p className="text-white/70 text-sm">
                                 Issue equipment to employee or section
+                            </p>
+                        </div>
+                    </button>
+
+                    {/* Retrieval Form Card */}
+                    <button
+                        onClick={() => router.push('/forms/retrieval')}
+                        className="group relative p-8 rounded-2xl backdrop-blur-[50px] bg-white/10 border border-white/40 shadow-2xl transition-all duration-500 hover:backdrop-blur-[60px] hover:bg-white/15 hover:scale-[1.02] hover:shadow-purple-500/30"
+                    >
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                                <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 15v-1a4 4 0 00-4-4H8m0 0l3 3m-3-3l3-3m9 14V5a2 2 0 00-2-2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                                </svg>
+                            </div>
+                            <h2 className="text-2xl font-bold text-white">Retrieve Equipment</h2>
+                            <p className="text-white/70 text-sm">
+                                Return issued equipment back to inventory
                             </p>
                         </div>
                     </button>
