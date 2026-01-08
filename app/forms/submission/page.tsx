@@ -294,7 +294,7 @@ export default function ComputerSubmissionPage() {
                         }}
                     >
                         <span className="relative z-10">
-                            {isLoading ? 'Submitting...' : 'Submit Computer'}
+                            {isLoading ? 'Submitting...' : 'Submit Equipment'}
                         </span>
                     </button>
                 </form>
